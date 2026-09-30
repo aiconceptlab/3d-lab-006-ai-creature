@@ -1,0 +1,31 @@
+{
+  "name": "play-001-ai-creature",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "dev": "node scripts/prepare-vision.mjs && node --env-file-if-exists=.env server.mjs --dev",
+    "start": "node --env-file-if-exists=.env server.mjs",
+    "build": "node scripts/prepare-vision.mjs && vite build && node scripts/copy-engine.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "check": "npm test && npm run build",
+    "instagram": "node marketing/render.mjs",
+    "test:browser": "node scripts/verify-browser.mjs",
+    "test:live": "node --env-file-if-exists=.env scripts/verify-live.mjs",
+    "test:sdk": "node scripts/verify-sdk.mjs"
+  },
+  "dependencies": {
+    "@8thwall/engine-binary": "1.0.0",
+    "@mediapipe/tasks-vision": "1.0.1",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@napi-rs/canvas": "1.0.9",
+    "playwright": "1.58.2",
+    "vite": "8.3.1"
+  }
+}

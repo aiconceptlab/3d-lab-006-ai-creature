@@ -1,0 +1,8 @@
+import assert from 'node:assert/strict';import {mkdir,writeFile} from 'node:fs/promises';
+try {
+const base='http://127.0.0.1:3019';const response=await fetch(base+'/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:process.env.ACCESS_CODE||''})});assert.equal(response.status,200,'Workshop session');const cookie=response.headers.get('set-cookie').split(';')[0];
+const post=async(path,body)=>{const r=await fetch(base+path,{method:'POST',headers:{cookie,'Content-Type':'application/json'},body:JSON.stringify(body)});const data=await r.json();if(r.status!==200)throw new Error(`${path}: HTTP ${r.status} — ${data.error||'Request failed'}`);return data;};
+const design=await post('/api/design',{name:'Mochi',description:'A round lilac bunny with long ears, violet eyes, a little puff tail and glowing mint paws. Sleepy and cuddly.'});assert.equal(design.source,'jev');assert.equal(design.design.family,'bunny');assert.equal(design.design.coat,'lilac');assert.equal(design.design.tail,'puff');
+const decision=await post('/api/decision',{energy:82,action:'idle',secondsInAction:5,follow:false,ball:true,tracking:'normal',personality:'playful',personVisible:false,distanceToPhone:1.3});assert.equal(decision.source,'jev');assert.equal(decision.action,'chase');
+await mkdir('artifacts',{recursive:true});await writeFile('artifacts/live-jev.json',JSON.stringify({checkedAt:new Date().toISOString(),design,decision},null,2));console.log(JSON.stringify({liveJev:true,family:design.design.family,coat:design.design.coat,tail:design.design.tail,action:decision.action,model:decision.model},null,2));
+}catch(e){console.error(e.message);process.exitCode=1;}

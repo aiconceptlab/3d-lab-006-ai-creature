@@ -1,0 +1,5 @@
+export class Perception {
+  constructor({video,onResult,onStatus}){Object.assign(this,{video,onResult,onStatus});this.active=true;this.busy=false;this.worker=new Worker('/perception-worker.js');this.worker.onmessage=({data})=>{if(!this.active)return;if(data.type==='ready'){onStatus('Local camera vision on');this.timer=setInterval(()=>this.frame(),1250);}if(data.type==='result'){this.busy=false;onResult(data.visible,data.score);}if(data.type==='error'){onStatus(data.message);this.stop();}};this.worker.onerror=()=>{onStatus('Local camera vision unavailable');this.stop();};this.worker.postMessage({type:'start'});}
+  async frame(){if(!this.active||this.busy||document.hidden||!this.video||this.video.readyState<2)return;this.busy=true;try{const bitmap=await createImageBitmap(this.video,{resizeWidth:320,resizeHeight:Math.round(320*this.video.videoHeight/this.video.videoWidth)});if(!this.active){bitmap.close();return;}this.worker.postMessage({type:'frame',bitmap},[bitmap]);}catch{this.busy=false;this.onStatus('Local vision is waiting for the camera.');}}
+  stop(){this.active=false;clearInterval(this.timer);this.worker.terminate();this.onResult(false,0);}
+}

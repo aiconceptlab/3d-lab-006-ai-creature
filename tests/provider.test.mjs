@@ -20,6 +20,10 @@ test('auth and timeout errors are sanitised, not replaced with fabricated AI out
 test('missing key explicitly uses demo rules; required Jev refuses the same request',async()=>{
   assert.equal((await new Jev().design(PRESETS[1])).source,'local');await assert.rejects(new Jev({require:true}).design(PRESETS[0]),e=>e.status===503);
 });
+test('an invalid key stops subsequent network calls until the server is restarted',async()=>{
+  let requests=0;const jev=new Jev({key:'placeholder',fetchFn:async()=>{requests++;return reply({},401);}});
+  await assert.rejects(jev.design(PRESETS[0]));await assert.rejects(jev.design(PRESETS[0]));assert.equal(requests,1);
+});
 test('design changes affect geometry and every preset has animated limbs',()=>{
   const a=createCreature(PRESETS[0].design),b=createCreature(PRESETS[1].design);
   assert.notEqual(new Box3().setFromObject(a.group).max.y,new Box3().setFromObject(b.group).max.y);

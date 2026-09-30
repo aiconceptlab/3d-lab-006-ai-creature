@@ -5,9 +5,11 @@ export class Jev {
   constructor({key='',model='jev-latest',timeout=3500,fetchFn=fetch,require=false}={}){this.key=key;this.model=model;this.timeout=timeout;this.fetchFn=fetchFn;this.require=require;}
   async evaluate(state,questions) {
     if(!this.key)throw new ProviderError('Jev is not connected. Add TYPESAFE_API_KEY to the server environment.',503);
+    if(this.authRejected)throw new ProviderError('Jev could not authenticate. Check the key and restart the server.',502);
     let response;
     try {response=await this.fetchFn('https://api.typesafe.ai/v1/systemone',{method:'POST',headers:{'Authorization':`Bearer ${this.key}`,'Content-Type':'application/json'},body:JSON.stringify({model:this.model,state,questions}),signal:AbortSignal.timeout(this.timeout)});}
     catch {throw new ProviderError('Jev did not respond in time. Please try again.',504);}
+    if(response.status===401)this.authRejected=true;
     if(!response.ok)throw new ProviderError(response.status===401?'Jev could not authenticate. Check the server key.':response.status===429?'Jev is busy. Wait a moment before trying again.':'Jev could not complete this request.',response.status===429?429:502);
     let result;try{result=await response.json();}catch{throw new ProviderError('Jev returned an unreadable response.');}
     return result;

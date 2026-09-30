@@ -2,7 +2,7 @@
 
 ## Passed
 
-- 18 automated tests: route clearance, inaccessible targets, fetch completion, tracking pause, follow stand-off, low-energy override, stale-response epoch triggers, Jev request/response contract, malformed outputs, sanitised provider failures, explicit demo mode, geometry changes, signed-session restart/tamper/expiry, room adapter lifecycle with a fixture, API authorisation/CSRF/body-size/static-secret protection, public-credit guard, paid-stage approval/no duplicate retry and asset URL checks.
+- 19 automated tests: route clearance, inaccessible targets, fetch completion, tracking pause, follow stand-off, low-energy override, stale-response epoch triggers, Jev request/response contract, malformed outputs, sanitised provider failures, invalid-key network circuit, explicit demo mode, geometry changes, signed-session restart/tamper/expiry, room adapter lifecycle with a fixture, API authorisation/CSRF/body-size/static-secret protection, public-credit guard, paid-stage approval/no duplicate retry and asset URL checks.
 - Production build with pinned dependencies and vision-model checksum.
 - Production dependency audit: zero known vulnerabilities at the time of checking.
 - Release index scan: zero matches for saved local credentials or recognised credential patterns; private environment/data paths excluded.

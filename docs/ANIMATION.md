@@ -4,7 +4,7 @@ The included Nova, Mochi and Ember each contain five baked Blender clips. The so
 
 | Clip | Source duration | Motion |
 | --- | ---: | --- |
-| Idle | 4 s | Gentle breathing, small head, ear and tail movement; paws remain planted |
+| Idle | 4 s | Gentle breathing and head/ear movement; paws remain planted |
 | Walk | 1.6 s | Four-beat sequence: rear left, front left, rear right, front right |
 | Trot | 0.867 s | Diagonal pairs: front left/rear right, then front right/rear left |
 | Look | 4 s | Wider curious head turn with subtle secondary motion |
@@ -16,7 +16,7 @@ The character travels at 0.10 m/s while exploring/following and 0.20 m/s while c
 
 Ember's original rear-left leg had a single misplaced bone and no lower chain. Blender mirrors the intact right chain, adds the missing three joints and redistributes the 3,425 affected vertex weights across the nearest segments. The geometry and PBR texture content remain the original generated character.
 
-Two-segment analytical IK sets a planted stance and smooth lifted swing for every leg. A fixed anatomical pole direction prevents knees flipping when crossing a nearly straight rest axis. The torso stays slightly flexed during locomotion to avoid extension singularities. Paw orientation is counter-rotated to remain level. Small body, head, ear and tail movements add secondary motion. These results are baked into GLB tracks; the browser does not run Blender or an IK solver.
+Two-segment analytical IK sets a planted stance and smooth lifted swing for every leg. A fixed anatomical pole direction prevents knees flipping when crossing a nearly straight rest axis. The torso stays slightly flexed during locomotion to avoid extension singularities. Paw orientation is counter-rotated to remain level. Small body, head and ear movements add secondary motion; Ember also has independent tail joints and tail motion. Nova and Mochi's tails currently follow their torsos. These results are baked into GLB tracks; the browser does not run Blender or an IK solver.
 
 ## Recreate or refine
 

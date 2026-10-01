@@ -1,4 +1,4 @@
-# PLAY 001 — implemented plan
+# 3D LAB // 006 — implemented plan
 
 The brief is a web companion described in ordinary language, with animated preview and mobile room play. The user's first target was Android, then changed to a shared website for iPhone and Android. The user has a Jev-branded API key and no Tripo account.
 

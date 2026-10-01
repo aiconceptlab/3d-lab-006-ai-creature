@@ -1,4 +1,4 @@
-# AI Concept Lab // PLAY 001 — AI Creature
+# AI Concept Lab // 3D LAB // 006 — AI Creature
 
 Describe a tiny companion. Meet it in animated 3D. Open the same website on a supported phone to place it on a tracked floor.
 

@@ -1,6 +1,6 @@
 Describe a creature. Bring it into your room. ✨
 
-AI CONCEPT LAB // PLAY 001 — AI Creature
+AI CONCEPT LAB // 3D LAB // 006 — AI Creature
 
 A tiny fox. A sleepy lilac bunny. A mischievous cat.
 You describe the companion, then meet it in an animated 3D playground.

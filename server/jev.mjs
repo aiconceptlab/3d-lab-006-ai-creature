@@ -2,17 +2,22 @@ import { choices, validateDesign, localDesign } from '../shared/design.mjs';
 import { allowedActions, fallbackDecision } from '../shared/motion.mjs';
 export class ProviderError extends Error {constructor(message,status=502){super(message);this.status=status;}}
 export class Jev {
-  constructor({key='',model='jev-latest',timeout=3500,fetchFn=fetch,require=false}={}){this.key=key;this.model=model;this.timeout=timeout;this.fetchFn=fetchFn;this.require=require;}
+  constructor({key='',provider='typesafe',model='jev-latest',timeout=3500,fetchFn=fetch,require=false}={}){
+    const endpoints={typesafe:'https://api.typesafe.ai/v1/systemone','jev-ai':'https://jev-ai.pro/api/v1/systemone'};
+    if(!Object.hasOwn(endpoints,provider))throw new ProviderError('JEV_PROVIDER must be typesafe or jev-ai.',503);
+    this.provider=provider;this.endpoint=endpoints[provider];this.key=key.trim();this.model=model;this.timeout=timeout;this.fetchFn=fetchFn;this.require=require;
+  }
   async evaluate(state,questions) {
-    if(!this.key)throw new ProviderError('Jev is not connected. Add TYPESAFE_API_KEY to the server environment.',503);
-    if(this.authRejected)throw new ProviderError('Jev could not authenticate. Check the key and restart the server.',502);
+    const setting=this.provider==='jev-ai'?'JEV_AI_API_KEY':'TYPESAFE_API_KEY',service=this.provider==='jev-ai'?'jev-ai.pro':'TypeSafe';
+    if(!this.key)throw new ProviderError(`Jev is not connected. Add ${setting} to the server environment.`,503);
+    if(this.authRejected)throw new ProviderError(`Jev could not authenticate with ${service}. Check ${setting} and JEV_PROVIDER, then restart the server.`,502);
     let response;
-    try {response=await this.fetchFn('https://api.typesafe.ai/v1/systemone',{method:'POST',headers:{'Authorization':`Bearer ${this.key}`,'Content-Type':'application/json'},body:JSON.stringify({model:this.model,state,questions}),signal:AbortSignal.timeout(this.timeout)});}
+    try {response=await this.fetchFn(this.endpoint,{method:'POST',redirect:'error',headers:{'Authorization':`Bearer ${this.key}`,'Content-Type':'application/json'},body:JSON.stringify({model:this.model,state,questions}),signal:AbortSignal.timeout(this.timeout)});}
     catch {throw new ProviderError('Jev did not respond in time. Please try again.',504);}
     if(response.status===401)this.authRejected=true;
-    if(!response.ok)throw new ProviderError(response.status===401?'Jev could not authenticate. Check the server key.':response.status===429?'Jev is busy. Wait a moment before trying again.':'Jev could not complete this request.',response.status===429?429:502);
+    if(!response.ok)throw new ProviderError(response.status===401?`Jev could not authenticate with ${service}. Check ${setting} and JEV_PROVIDER, then restart the server.`:response.status===402?'Jev has insufficient credits or input tokens. Check your provider balance.':response.status===429?'Jev is busy. Wait a moment before trying again.':'Jev could not complete this request.',[402,429].includes(response.status)?response.status:502);
     let result;try{result=await response.json();}catch{throw new ProviderError('Jev returned an unreadable response.');}
-    return result;
+    this.authenticated=true;return result;
   }
   validateAnswer(answer, options) {
     if(answer?.type!=='choice'||!options.includes(answer.choice)||!Number.isFinite(answer.confidence)||answer.confidence<0||answer.confidence>1)throw new ProviderError('Jev returned an invalid decision.');

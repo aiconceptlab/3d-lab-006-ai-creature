@@ -22,9 +22,9 @@ On Windows use `Copy-Item .env.example .env` instead of `cp`. Open http://127.0.
 ## What works
 
 - Fox, cat and bunny companions: coat, eyes, luminous accents, ears, tail, body build and personality.
-- Included detailed Nova: 38,040 triangles, PBR textures, a 35-joint quadruped rig and an in-place walk. The same generated asset runs in the preview and room camera, with independent animation state.
+- Detailed Nova, Mochi and Ember: separate textured, rigged assets with in-place walks. Each model runs in the preview and room camera with independent animation state. See [asset details](docs/COMPANION-ASSETS.md).
 - Jev interprets a description into eight validated choices. Trusted geometry creates and animates the result. Without a key, deterministic local rules are explicitly labelled.
-- Walking, blinking, breathing, ear movement, virtual fetch, phone following, simulated energy and manually marked obstacle zones.
+- Generated pets use their walking clips and subtle idle breathing. Simple procedural designs also blink and move their ears. All pets support virtual fetch, phone following, simulated energy and manually marked obstacle zones.
 - Saved designs on the current browser; animated GLB and design JSON downloads.
 - Mobile camera view using the distributed 8th Wall engine. Floor placement, tracking-loss pause, recenter and camera cleanup.
 - Optional local person detection, enabled by “Notice people.” Camera frames stay on the device; only a visibility boolean goes to Jev. This is not identity recognition or distance measurement.
@@ -32,10 +32,12 @@ On Windows use `Copy-Item .env.example .env` instead of `cp`. Open http://127.0.
 
 ## Connect Jev
 
-Set `TYPESAFE_API_KEY` in the local `.env`, using an API key issued by [TypeSafe](https://console.typesafe.ai). Restart the server after changes. The official endpoint is [POST /v1/systemone](https://docs.typesafe.ai/api), with model `jev-latest` and typed `choice` questions. A key from a similarly named third-party service is not interchangeable.
+Choose the provider that issued your key. For [TypeSafe](https://console.typesafe.ai), use `JEV_PROVIDER=typesafe` and `TYPESAFE_API_KEY`. For the independent [Jev AI service](https://jev-ai.pro/jev-api), use `JEV_PROVIDER=jev-ai` and `JEV_AI_API_KEY`. The server sends credentials only to that provider's fixed HTTPS endpoint. Keys and balances are separate; changing only the key is insufficient. Restart after saving .env.
 
 ```dotenv
+JEV_PROVIDER=typesafe
 TYPESAFE_API_KEY=your_local_key
+# Alternative: JEV_PROVIDER=jev-ai with JEV_AI_API_KEY=your_local_key
 JEV_MODEL=jev-latest
 REQUIRE_JEV=0
 ```

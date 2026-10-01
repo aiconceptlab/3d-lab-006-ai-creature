@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {Jev} from '../server/jev.mjs';import {choices,PRESETS,validateBrief,validateDesign} from '../shared/design.mjs';
+import {Jev} from '../server/jev.mjs';import {choices,PRESETS,validateBrief,validateDesign,includedModel} from '../shared/design.mjs';
 import {createCreature} from '../src/creature.js';import {Box3} from 'three';
 const reply=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json'}});
 test('Jev sends the documented typed choice contract and validates the full design',async()=>{
@@ -23,6 +23,21 @@ test('missing key explicitly uses demo rules; required Jev refuses the same requ
 test('an invalid key stops subsequent network calls until the server is restarted',async()=>{
   let requests=0;const jev=new Jev({key:'placeholder',fetchFn:async()=>{requests++;return reply({},401);}});
   await assert.rejects(jev.design(PRESETS[0]));await assert.rejects(jev.design(PRESETS[0]));assert.equal(requests,1);
+});
+test('independent Jev AI keys reach their own endpoint and never follow redirects',async()=>{
+  let destination,headers,redirect;
+  const jev=new Jev({key:'hosted-placeholder',provider:'jev-ai',fetchFn:async(url,options)=>{destination=url;headers=options.headers;redirect=options.redirect;return reply({model:'fixture',answers:{}});}});
+  await jev.evaluate('fixture',{});
+  assert.equal(destination,'https://jev-ai.pro/api/v1/systemone');assert.equal(headers.Authorization,'Bearer hosted-placeholder');assert.equal(redirect,'error');assert.equal(jev.authenticated,true);
+  assert.throws(()=>new Jev({provider:'unrecognised'}),/JEV_PROVIDER/);
+  const empty=new Jev({key:'placeholder',provider:'jev-ai',fetchFn:async()=>reply({},402)});
+  await assert.rejects(empty.evaluate('fixture',{}),e=>e.status===402&&e.message.includes('credits'));
+});
+test('reinterpreting an included sample preserves its detailed asset while custom briefs stay separate',()=>{
+  const sample=PRESETS[1];
+  assert.equal(includedModel({...sample.design,ears:'large'},sample.description),'/models/mochi.glb');
+  assert.equal(includedModel(PRESETS[2].design),'/models/ember.glb');
+  assert.equal(includedModel({...sample.design,coat:'moss'},'A moss bunny with short ears.'),undefined);
 });
 test('design changes affect geometry and every preset has animated limbs',()=>{
   const a=createCreature(PRESETS[0].design),b=createCreature(PRESETS[1].design);

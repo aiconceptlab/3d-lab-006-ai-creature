@@ -19,6 +19,12 @@ export const PRESETS = [
   {name: 'Mochi', modelUrl: '/models/mochi.glb', description: 'A round lilac bunny with long ears, violet eyes, a little puff tail and mint paws. Sleepy and cuddly.', design: {...NOVA, family: 'bunny', coat: 'lilac', accent: 'mint', eyes: 'violet', ears: 'long', tail: 'puff', personality: 'sleepy'}},
   {name: 'Ember', modelUrl: '/models/ember.glb', description: 'A slender charcoal cat with small ears, amber eyes, a fluffy tail and warm amber paws. Playful and energetic.', design: {...NOVA, family: 'cat', coat: 'charcoal', accent: 'amber', eyes: 'amber', ears: 'small', tail: 'fluffy', build: 'slender', personality: 'playful'}},
 ];
+export function includedModel(design,description='') {
+  const normalise=text=>text.trim().toLowerCase().replace(/\s+/g,' ');
+  const preset=PRESETS.find(p=>normalise(p.description)===normalise(description))
+    ||PRESETS.find(p=>Object.keys(p.design).every(key=>p.design[key]===design?.[key]));
+  return preset?.modelUrl;
+}
 export function validateDesign(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Invalid pet design.');
   const result = {};

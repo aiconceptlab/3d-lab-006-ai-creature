@@ -2,7 +2,7 @@
 
 ## Passed
 
-- 27 automated tests (including generated-rig isolation, animation, grounded scaling and credit guards): route clearance, inaccessible targets, fetch completion, tracking pause, follow stand-off, low-energy override, stale-response epoch triggers, Jev request/response contract, malformed outputs, sanitised provider failures, invalid-key network circuit, explicit demo mode, geometry changes, signed-session restart/tamper/expiry, room adapter lifecycle with a fixture, API authorisation/CSRF/body-size/static-secret protection, public-credit guard, paid-stage approval/no duplicate retry and asset URL checks.
+- 29 automated tests (including generated-rig isolation, animation, grounded scaling and credit guards): route clearance, inaccessible targets, fetch completion, tracking pause, follow stand-off, low-energy override, stale-response epoch triggers, Jev request/response contract, malformed outputs, sanitised provider failures, invalid-key network circuit, explicit demo mode, geometry changes, signed-session restart/tamper/expiry, room adapter lifecycle with a fixture, API authorisation/CSRF/body-size/static-secret protection, public-credit guard, paid-stage approval/no duplicate retry and asset URL checks.
 - Production build with pinned dependencies and vision-model checksum.
 - Production dependency audit: zero known vulnerabilities at the time of checking.
 - Release index scan: zero matches for saved local credentials or recognised credential patterns; private environment/data paths excluded.
@@ -12,9 +12,11 @@
 
 - Live Tripo Nova: one 40-credit mesh, free quadruped check, 25-credit rig and 10-credit walk. Blender inspection completed. Actual generated GLB browser check passed: 38,040 triangles, 35 bones, changing skeletal pose, download, switching and reload.
 
+- Live Jev AI at jev-ai.pro: authenticated models/balance checks and actual design + behaviour requests passed after selecting the correct provider. Returned jev-1.13.0, lilac bunny/puff-tail design and chase behaviour. No fallback presented as a live result.
+
 ## Not verified / release gates
 
-- Live Jev: attempted with the supplied local key; official TypeSafe endpoint returned HTTP 401. No successful live AI design or decision is claimed. Contract tests pass. Replace/check the key and run npm run test:live before recording a live-AI demonstration.
+- Official TypeSafe account/key: not live-tested successfully. The supplied key belongs to the independent Jev AI service; sending it to the official TypeSafe endpoint correctly returned HTTP 401. The provider selection now keeps their credentials separate.
 - Physical mobile SLAM: no iPhone or Android device camera was available for a real floor-anchoring test. Emulator layout is not proof of world tracking.
 - Positive camera person detection and mobile performance: not verified on a physical camera.
 - Tripo prompts beyond the three included pets: quality and rig compatibility are not guaranteed.
@@ -41,3 +43,7 @@ The updated real-engine smoke test also verifies GeneratedCompanion is present i
 - Desktop, iPhone and Pixel viewport checks pass.
 - Server binds to 0.0.0.0 by default and prints private LAN addresses. HTTP responses for the home page and config passed at the active Ethernet address. Tests verify LAN local creation remains usable and configured provider access is blocked without an access code.
 - Windows firewall rule inspection required administrator access and was unavailable. A connection from a separate physical device still requires user confirmation. LAN HTTP does not enable phone camera access; use HTTPS for room mode.
+
+## Provider and preview repair
+
+The open in-app browser was still executing a PLAY 001 bundle. Reloading loaded 3D LAB 006 and the generated Mochi/Ember assets. Included sample descriptions now preserve their detailed asset even if Jev chooses a slightly different recipe. A loading panel covers the temporary procedural placeholder. The studio follows the pet while preserving orbit controls; moving-pet framing and original downloads are checked in the generated-model browser harness. No Tripo generation was needed for this repair.

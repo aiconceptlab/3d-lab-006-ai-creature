@@ -8,7 +8,7 @@ The build copies the unchanged 8th Wall binary from its npm package and MediaPip
 
 ## 2. Enable live creation
 
-Set TYPESAFE_API_KEY to an official TypeSafe API key. Jev is a TypeSafe model; a key from another Jev-branded site cannot authenticate to api.typesafe.ai. Set JEV_MODEL=jev-latest. Restart after saving environment changes. Run `npm run test:live` with the app running.
+Set JEV_PROVIDER=typesafe and TYPESAFE_API_KEY for an official console.typesafe.ai key. For a key from the independent jev-ai.pro service, set JEV_PROVIDER=jev-ai and JEV_AI_API_KEY instead. That selects https://jev-ai.pro/api/v1/systemone; its keys and balance cannot authenticate at api.typesafe.ai. Use JEV_MODEL=jev-latest. Restart after saving .env, then run `npm run test:live` with the app running. Provider connections refuse HTTP redirects.
 
 If creation says “could not authenticate,” check the issuer and key/account status. Do not paste the key into chat or commit it. A configured key is not proof of successful authentication.
 
@@ -47,3 +47,7 @@ To inspect your own generated mesh:
 ```
 
 The script writes four renders, a geometry report and an editable inspection .blend file. You can also use Blender's File → Import → glTF 2.0 to inspect or refine the included asset manually. The other local-demo creatures are still built directly in Three.js.
+
+## Updating the app
+
+After pulling an update, run npm ci if dependencies changed, npm run build and restart npm start. Reload existing browser tabs: an already open tab continues executing its old JavaScript until refreshed. Included pets display a loading panel while the detailed mesh loads. The studio follows their movement so they stay in frame.

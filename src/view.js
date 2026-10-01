@@ -7,7 +7,7 @@ export class Studio {
     this.container=container;this.onTap=onTap;this.frame=frame;this.running=true;this.scene=new THREE.Scene();this.scene.background=new THREE.Color('#111e22');this.scene.fog=new THREE.Fog('#111e22',3.3,10);
     this.renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});this.renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFShadowMap;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1;container.append(this.renderer.domElement);
     const pmrem=new THREE.PMREMGenerator(this.renderer),environment=new RoomEnvironment();this.environment=pmrem.fromScene(environment,.04);this.scene.environment=this.environment.texture;this.scene.environmentIntensity=.65;environment.dispose();pmrem.dispose();
-    this.camera=new THREE.PerspectiveCamera(35,1,.03,25);this.camera.position.set(.8,.78,1.45);this.controls=new OrbitControls(this.camera,this.renderer.domElement);this.controls.target.set(0,.26,0);this.controls.enableDamping=true;this.controls.maxPolarAngle=Math.PI*.47;this.controls.minDistance=.7;this.controls.maxDistance=5;this.controls.enablePan=false;
+    this.camera=new THREE.PerspectiveCamera(35,1,.03,25);this.camera.position.set(.9,.88,2.05);this.controls=new OrbitControls(this.camera,this.renderer.domElement);this.controls.target.set(0,.26,0);this.controls.enableDamping=true;this.controls.maxPolarAngle=Math.PI*.47;this.controls.minDistance=.7;this.controls.maxDistance=5;this.controls.enablePan=false;
     this.scene.add(new THREE.HemisphereLight('#c5e4e8','#77675a',1));
     const key=new THREE.DirectionalLight('#ffdebd',2);key.position.set(-1.2,2,1.8);key.castShadow=true;key.shadow.mapSize.set(1024,1024);key.shadow.camera.left=-2;key.shadow.camera.right=2;key.shadow.camera.top=2;key.shadow.camera.bottom=-2;key.shadow.normalBias=.004;key.shadow.radius=4;this.scene.add(key);
     const rim=new THREE.DirectionalLight('#77d7ef',2);rim.position.set(1,1,-1);this.scene.add(rim);
@@ -24,11 +24,23 @@ export class Studio {
   resize(){const w=this.container.clientWidth,h=this.container.clientHeight;if(!w||!h)return;this.renderer.setSize(w,h);this.camera.aspect=w/h;this.camera.updateProjectionMatrix();}
   replace(design){this.scene.remove(this.pet.group);this.pet.dispose();this.pet=createCreature(design);this.scene.add(this.pet.group);}
   useCreature(creature){this.scene.remove(this.pet.group);this.pet.dispose();this.pet=creature;this.scene.add(creature.group);}
-  sync(motion,dt){this.pet.group.position.set(motion.position.x,0,motion.position.z);this.pet.group.rotation.y=motion.yaw;this.pet.animate(dt,motion.speed,motion.action);this.ball.visible=!!motion.ball;if(motion.ball)this.ball.position.set(motion.ball.x,.055,motion.ball.z);}
+  sync(motion,dt){
+    this.pet.group.position.set(motion.position.x,0,motion.position.z);this.pet.group.rotation.y=motion.yaw;this.pet.animate(dt,motion.speed,motion.action);
+    // Keep the companion framed as it explores, preserving the user's orbit.
+    const focus=new THREE.Vector3(motion.position.x,.26,motion.position.z),shift=focus.sub(this.controls.target).multiplyScalar(1-Math.exp(-12*dt));
+    this.controls.target.add(shift);this.camera.position.add(shift);
+    this.ball.visible=!!motion.ball;if(motion.ball)this.ball.position.set(motion.ball.x,.055,motion.ball.z);
+  }
   obstacles(items){this.obstacleGroup.children.forEach(o=>{o.geometry.dispose();o.material.dispose();});this.obstacleGroup.clear();for(const o of items){const mesh=new THREE.Mesh(new THREE.BoxGeometry(o.w,.035,o.d),new THREE.MeshBasicMaterial({color:'#e99a70',transparent:true,opacity:.4}));mesh.position.set(o.x,.018,o.z);this.obstacleGroup.add(mesh);}}
   loop(now){if(!this.running)return;const dt=Math.min((now-this.last)/1000,.05);this.last=now;this.frame?.(dt,this);this.controls.update();this.renderer.render(this.scene,this.camera);this.raf=requestAnimationFrame(this.loop);}
   pause(){this.running=false;cancelAnimationFrame(this.raf);}
   resume(){this.running=true;this.last=performance.now();this.raf=requestAnimationFrame(this.loop);}
-  resetCamera(){this.camera.position.set(.8,.78,1.45);this.controls.target.set(0,.26,0);}
+  resetCamera(){const p=this.pet.group.position;this.camera.position.set(p.x+.9,.88,p.z+2.05);this.controls.target.set(p.x,.26,p.z);}
+  framing(){
+    this.scene.updateMatrixWorld(true);this.camera.updateMatrixWorld(true);this.pet.group.traverse(o=>{if(o.isSkinnedMesh)o.computeBoundingBox();});
+    const box=new THREE.Box3().setFromObject(this.pet.group),corners=[];
+    for(const x of [box.min.x,box.max.x])for(const y of [box.min.y,box.max.y])for(const z of [box.min.z,box.max.z])corners.push(new THREE.Vector3(x,y,z).project(this.camera).toArray());
+    return corners;
+  }
   dispose(){this.pause();this.observer.disconnect();this.controls.dispose();this.pet.dispose();this.scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());}});this.renderer.dispose();this.renderer.domElement.remove();}
 }

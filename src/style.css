@@ -5,3 +5,5 @@
 
 .demo-button{display:block;margin:15px auto 0;background:none;border:0;color:#a1beb8;text-decoration:underline;font:inherit;font-size:12px;cursor:pointer}.demo-button:hover{color:#e6efe5}
 #room-canvas{position:absolute;inset:0;width:100%!important;height:100%!important}
+
+.model-loading{position:absolute;inset:0;z-index:2;display:grid;place-items:center;background:#111e22;color:#b8e3d3;font-size:13px;letter-spacing:.3px}

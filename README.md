@@ -4,7 +4,7 @@ Describe a tiny companion. Meet it in animated 3D. Open the same website on a su
 
 ![Nova concept artwork](public/nova-concept.png)
 
-*The artwork above is the visual direction. The default Nova is now a real Tripo-generated, textured and rigged 3D character. Its fur uses sculpted geometry and textures rather than cinematic strand rendering. Other key-free designs use explicitly labelled procedural geometry.*
+*The artwork above is the visual direction. Nova, Mochi and Ember are real Tripo-generated, textured and rigged 3D characters. Its fur uses sculpted geometry and textures rather than cinematic strand rendering. Custom key-free designs use explicitly labelled procedural geometry.*
 
 ## Run it
 
@@ -17,7 +17,7 @@ npm run build
 npm start
 ```
 
-On Windows use `Copy-Item .env.example .env` instead of `cp`. Open http://127.0.0.1:3019. It works without provider keys in clearly labelled local demo mode. Development: `npm run dev`.
+On Windows use `Copy-Item .env.example .env` instead of `cp`. Open http://127.0.0.1:3019. It works without provider keys. The included pets are detailed generated assets; custom local designs are clearly labelled demos. By default the server binds to the LAN and prints your local and LAN addresses. Open the printed LAN URL on another device connected to the same network. Plain HTTP supports the preview and controls; camera room mode requires HTTPS. Development: `npm run dev`.
 
 ## What works
 
@@ -52,7 +52,7 @@ The pet occupies a small virtual play area around the placement point. Mark excl
 
 ## Optional image-to-3D experiment
 
-The included Nova needs no Tripo account or credits to play. Connect a Tripo developer API key to create another reference, approve it, then request a detailed mesh, quadruped rig check, rig and walking clip. Generated compatible rigs can enter room mode. Nova's complete live pipeline was checked on 1 October 2026 and consumed 75 API credits in one pass. Other generated creatures still require visual review; one good Nova is not a guarantee of quality for every prompt. See [docs/TRIPO.md](docs/TRIPO.md) and [Nova provenance](docs/NOVA-ASSET.md).
+The included Nova, Mochi and Ember need no Tripo account or credits to play. Connect a Tripo developer API key to create another reference, approve it, then request a detailed mesh, quadruped rig check, rig and walking clip. Generated compatible rigs can enter room mode. Nova's complete live pipeline was checked on 1 October 2026 and consumed 75 API credits in one pass. Other generated creatures still require visual review; one good Nova is not a guarantee of quality for every prompt. See [docs/TRIPO.md](docs/TRIPO.md) and [Nova provenance](docs/NOVA-ASSET.md).
 
 ## Check it
 

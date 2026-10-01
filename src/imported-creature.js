@@ -2,10 +2,17 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 const cache=new Map();
+async function prepareTextures(asset){
+  if(typeof createImageBitmap!=='function')return asset;
+  const sources=new Map();
+  asset.scene.traverse(object=>{for(const material of object.material?Array.isArray(object.material)?object.material:[object.material]:[])for(const value of Object.values(material)){if(!value?.isTexture||!value.image?.width||!value.image?.height)continue;if(!sources.has(value.source))sources.set(value.source,new Set());sources.get(value.source).add(value);}});
+  for(const [source,textures] of sources){const image=source.data,ratio=Math.min(1,2048/Math.max(image.width,image.height));if(ratio===1)continue;const resized=await createImageBitmap(image,{resizeWidth:Math.round(image.width*ratio),resizeHeight:Math.round(image.height*ratio),resizeQuality:'high',colorSpaceConversion:'none',premultiplyAlpha:'none'});source.data=resized;for(const texture of textures)texture.needsUpdate=true;image.close?.();}
+  return asset;
+}
 export async function loadCreatureAsset(url){
   const resolved=new URL(url,location.origin);
   if(!(resolved.origin===location.origin&&resolved.pathname.startsWith('/models/'))&&!(resolved.protocol==='https:'&&/(^|\.)tripo3d\.(ai|com)$/.test(resolved.hostname)&&!resolved.username&&!resolved.password))throw new Error('This model address is not supported.');
-  if(!cache.has(url))cache.set(url,new GLTFLoader().loadAsync(url).catch(error=>{cache.delete(url);throw error;}));
+  if(!cache.has(url))cache.set(url,new GLTFLoader().loadAsync(url).then(prepareTextures).catch(error=>{cache.delete(url);throw error;}));
   return cache.get(url);
 }
 export function createImportedCreature(asset,{height=.55,yaw=-Math.PI/2}={}){

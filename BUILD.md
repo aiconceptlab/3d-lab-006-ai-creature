@@ -14,9 +14,13 @@ If creation says “could not authenticate,” check the issuer and key/account 
 
 ## 3. Share with a phone
 
-Keep HOST=127.0.0.1 when an HTTPS tunnel/proxy runs on this same computer. Forward the HTTPS origin to http://127.0.0.1:3019. Preserve the public Host header and set X-Forwarded-Proto=https. Do not disable browser certificate warnings. A self-signed URL can fail camera access.
+The default HOST=0.0.0.0 binds to the LAN. Startup prints the Local URL and private IPv4 LAN URLs. Use the address for your active Ethernet/Wi-Fi adapter on another device connected to the same network. Set HOST=127.0.0.1 if you want a localhost-only server. If Windows asks about Node network access, allow your trusted private network. If another device cannot connect, check that its network is the same and that the firewall permits inbound TCP 3019 on the trusted private network.
 
-Set ACCESS_CODE to a long unpredictable value and restart **before** sharing a live-AI URL. Public requests with a provider key and no access code are refused. For a LAN bind use HOST=0.0.0.0 only with ACCESS_CODE set; plain HTTP on a LAN still does not provide phone camera access. Production should strip untrusted forwarded headers and provide HTTPS, compression and a durable DATA_DIR.
+The included pets, local creation and play controls work on the LAN without keys or an access code. Unprotected LAN requests never invoke the configured providers. Set ACCESS_CODE and restart to share live provider actions.
+
+For camera room mode use an HTTPS tunnel/proxy on this computer. Forward the HTTPS origin to http://127.0.0.1:3019. Preserve the public Host header and set X-Forwarded-Proto=https. Do not disable browser certificate warnings. A self-signed URL can fail camera access.
+
+Set ACCESS_CODE to a long unpredictable value and restart **before** sharing a live-AI URL. Provider actions on non-localhost origins require the access code; preview and local behaviour remain usable. Plain HTTP on a LAN does not provide phone camera access. Production should strip untrusted forwarded headers and provide HTTPS, compression and a durable DATA_DIR.
 
 Open the link directly in Safari (iPhone) or Chrome (Android), unlock, then tap Bring into my room. Allow camera/device motion if the browser requests it. Point at a textured, well-lit floor, move slowly, then tap to place the pet. Use the controls to throw a virtual ball or follow the phone. Tap Obstacle then mark an exclusion. Rescan resets floor placement. Exit closes the camera stream.
 

@@ -29,5 +29,20 @@ test('API requires a session, rejects cross-origin and oversized input, never se
 test('rate limits expire and paid access is protected on public hosts',async()=>{
   let now=100;const rate=createRateLimiter(()=>now);rate('client',1,1000);assert.throws(()=>rate('client',1,1000),e=>e.status===429);now=1200;rate('client',1,1000);
   const dir=await mkdtemp(join(tmpdir(),'creature-public-'));const app=await createApp({env:{DATA_DIR:dir},jev:{key:'placeholder'}});await new Promise(r=>app.server.listen(0,'127.0.0.1',r));
-  try{const status=await new Promise((resolve,reject)=>http.get({hostname:'127.0.0.1',port:app.server.address().port,path:'/api/config',headers:{Host:'public.example'}},res=>{res.resume();resolve(res.statusCode);}).on('error',reject));assert.equal(status,503);}finally{await app.close();await rm(dir,{recursive:true,force:true});}
+  try{const status=await new Promise((resolve,reject)=>http.get({hostname:'127.0.0.1',port:app.server.address().port,path:'/api/config',headers:{Host:'public.example'}},res=>{res.resume();resolve(res.statusCode);}).on('error',reject));assert.equal(status,200);}finally{await app.close();await rm(dir,{recursive:true,force:true});}
+});
+
+test('LAN preview and local actions work without exposing configured provider credits',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'creature-lan-'));let calls=0;
+  const app=await createApp({env:{DATA_DIR:dir,TRIPO_API_KEY:'placeholder',ENABLE_TRIPO:'1'},jev:{key:'placeholder',design:()=>{calls++;throw new Error('Must not call provider');},decide:()=>{calls++;throw new Error('Must not call provider');}}});
+  await new Promise(r=>app.server.listen(0,'0.0.0.0',r));
+  const request=(path,body,cookie='')=>new Promise((resolve,reject)=>{const req=http.request({hostname:'127.0.0.1',port:app.server.address().port,path,method:body?'POST':'GET',headers:{Host:'192.168.1.99','Content-Type':'application/json',...(cookie?{Cookie:cookie}:{})}},res=>{let text='';res.on('data',d=>text+=d);res.on('end',()=>resolve({status:res.statusCode,headers:res.headers,body:JSON.parse(text)}));});req.on('error',reject);req.end(body?JSON.stringify(body):undefined);});
+  try{
+    const config=await request('/api/config');assert.equal(config.status,200);assert.equal(config.body.jev,false);assert.equal(config.body.tripo,false);
+    const login=await request('/api/session',{});const cookie=login.headers['set-cookie'][0].split(';')[0];
+    const design=await request('/api/design',{name:'Bun',description:'A lilac bunny with long ears.'},cookie);assert.equal(design.status,200);assert.equal(design.body.source,'local');
+    assert.equal((await request('/api/generations',{name:'Bun',description:'A lilac bunny with long ears.'},cookie)).status,503);
+    assert.equal((await request('/api/tripo/balance',undefined,cookie)).status,503);
+    assert.equal(calls,0);
+  }finally{await app.close();await rm(dir,{recursive:true,force:true});}
 });

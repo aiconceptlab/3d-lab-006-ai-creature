@@ -3,6 +3,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
 import { randomBytes, timingSafeEqual, createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { launchAddresses } from './server/network.mjs';
 import { Jev, ProviderError } from './server/jev.mjs';
 import { TripoJobs } from './server/tripo.mjs';
 import { Sessions } from './server/sessions.mjs';
@@ -39,25 +40,27 @@ export async function createApp({env=process.env,jev,fetchFn=fetch,development=f
         const origin=req.headers.origin;
         if(origin&&new URL(origin).host!==req.headers.host)throw new ProviderError('This request came from another website.',403);
         const ip=req.socket.remoteAddress||'unknown';rate('ip:'+ip,360,60000);
-        const localHost=/^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(req.headers.host||'');
-        if(!code&&!localHost&&(jev.key||jobs.available))throw new ProviderError('Set ACCESS_CODE on the server before sharing live AI access.',503);
+        const localHost=/^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(req.headers.host||'')&&['127.0.0.1','::1','::ffff:127.0.0.1'].includes(ip);
+        const providerAccess=!!code||localHost;
         const cookies=String(req.headers.cookie||'').split(';').map(x=>x.trim());
         const cookie=cookies.find(x=>x.startsWith('creature_session='))?.slice(17);
         const session=sessions.read(cookie);
         const authorised=!!session;
-        if(req.method==='GET'&&url.pathname==='/api/config')return send(res,200,{authRequired:!!code,authorised,jev:!!jev.key,requireJev,tripo:jobs.available,designMode:jev.key?'jev':'local'});
+        if(req.method==='GET'&&url.pathname==='/api/config')return send(res,200,{authRequired:!!code,authorised,jev:providerAccess&&!!jev.key,requireJev,tripo:providerAccess&&jobs.available,designMode:providerAccess&&jev.key?'jev':'local'});
         if(req.method==='POST'&&url.pathname==='/api/session'){
           rate('login:'+ip,8,60000);const body=await readJson(req);if(code&&!equalSecret(body.code||'',code))throw new ProviderError('That access code did not match.',401);
           const {token}=sessions.issue();
           res.setHeader('Set-Cookie',`creature_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=86400${secure?'; Secure':''}`);return send(res,200,{ok:true});
         }
         if(!authorised)throw new ProviderError('Enter the access code to continue.',401);
+        if(url.pathname.startsWith('/api/tripo/')||url.pathname.startsWith('/api/generations')){if(!providerAccess)throw new ProviderError('Set ACCESS_CODE on the server before sharing live AI access.',503);}
         if(req.method==='GET'&&url.pathname==='/api/tripo/balance'){rate('balance:'+session.owner,12,60000);return send(res,200,await jobs.balance());}
         if(req.method==='POST'&&url.pathname==='/api/design'){
-          rate('design:'+session.owner,15,3600000);const input=await readJson(req),brief=validateBrief(input);if(input.mode==='local'&&requireJev)throw new ProviderError('This workshop requires Jev creation.',403);const result=input.mode==='local'?{design:localDesign(brief.description),source:'local',note:'Local design demo · no AI request made'}:await jev.design(brief);return send(res,200,{...brief,...result});
+          rate('design:'+session.owner,15,3600000);const input=await readJson(req),brief=validateBrief(input);if(!providerAccess&&requireJev)throw new ProviderError('Set ACCESS_CODE on the server before sharing live AI access.',503);if(input.mode==='local'&&requireJev)throw new ProviderError('This workshop requires Jev creation.',403);const result=input.mode==='local'||!providerAccess?{design:localDesign(brief.description),source:'local',note:'Local design demo · no AI request made'}:await jev.design(brief);return send(res,200,{...brief,...result});
         }
         if(req.method==='POST'&&url.pathname==='/api/decision'){
           rate('decision:'+session.owner,75,60000);const state=validateState(await readJson(req));
+          if(!providerAccess){if(requireJev)throw new ProviderError('Set ACCESS_CODE on the server before sharing live AI access.',503);return send(res,200,{...fallbackDecision(state),note:'Local behaviour · no AI request made'});}
           try{return send(res,200,await jev.decide(state));}catch(e){if(requireJev)throw e;return send(res,200,{...fallbackDecision(state),note:'Local fallback · Jev unavailable'});}
         }
         if(req.method==='POST'&&url.pathname==='/api/generations') {rate('generation:'+session.owner,3,3600000);if(!jobs.available)throw new ProviderError('Image-to-3D is not connected.',503);return send(res,202,await jobs.start(validateBrief(await readJson(req)),session.owner));}
@@ -84,8 +87,7 @@ export async function createApp({env=process.env,jev,fetchFn=fetch,development=f
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   let built=false;try{built=(await stat(resolve(ROOT,'dist/index.html'))).isFile();}catch{}
-  const app=await createApp({development:process.argv.includes('--dev')||!built});const port=Number(process.env.PORT)||3019;const host=process.env.HOST||'127.0.0.1';
-  if(host!=='127.0.0.1'&&host!=='localhost'&&!process.env.ACCESS_CODE)throw new Error('Set ACCESS_CODE before exposing the server to your network.');
-  app.server.listen(port,host,()=>console.log(`AI Creature ready at http://${host}:${port} · ${process.env.TYPESAFE_API_KEY?'Jev key configured':'local demo'}`));
+  const app=await createApp({development:process.argv.includes('--dev')||!built});const port=Number(process.env.PORT)||3019;const host=process.env.HOST||'0.0.0.0';
+  app.server.listen(port,host,()=>{console.log('AI Creature — 3D LAB // 006');for(const address of launchAddresses(host,port))console.log(`${address.label}: ${address.url}`);if(!process.env.ACCESS_CODE&&(process.env.TYPESAFE_API_KEY||process.env.ENABLE_TRIPO==='1'))console.log('LAN: included pets + local behaviour. Set ACCESS_CODE to share provider actions.');});
   for(const signal of ['SIGINT','SIGTERM'])process.on(signal,async()=>{await app.close();process.exit();});
 }

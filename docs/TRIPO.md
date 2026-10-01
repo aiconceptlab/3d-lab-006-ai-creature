@@ -1,6 +1,6 @@
 # Tripo generated companions
 
-New generation is disabled by default and requires a separate Tripo developer API account/key. The included Nova plays without a key. Its live mesh → quadruped check → rig → walk pipeline succeeded on 1 October 2026, consuming 75 API credits. See NOVA-ASSET.md for the exact asset and verification scope.
+New generation is disabled by default and requires a separate Tripo developer API account/key. The included Nova, Mochi and Ember play without a key. Its live mesh → quadruped check → rig → walk pipeline succeeded on 1 October 2026, consuming 75 API credits. See COMPANION-ASSETS.md for all three models, costs and verification scope.
 
 Set TRIPO_API_KEY locally and ENABLE_TRIPO=1, restart, then open the optional image-to-3D panel. Generate a clean four-legged reference. Inspect it before approving. Approval starts mesh generation, quadruped rig checking, rigging and the supported quadruped walk clip. Each provider stage may consume credits; check current provider pricing first. There is no automatic resubmission after ambiguous paid failures.
 

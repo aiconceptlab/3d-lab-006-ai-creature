@@ -15,9 +15,9 @@ export const palette = {
 };
 export const NOVA = Object.freeze({family: 'fox', coat: 'cream', accent: 'cyan', eyes: 'blue', ears: 'large', tail: 'curled', build: 'round', personality: 'curious'});
 export const PRESETS = [
-  {name: 'Nova', description: 'A tiny cream fox-cat with huge ears, blue eyes, glowing cyan paws and a curled tail. Curious and friendly.', design: {...NOVA}},
-  {name: 'Mochi', description: 'A round lilac bunny with long ears, violet eyes, a little puff tail and mint paws. Sleepy and cuddly.', design: {...NOVA, family: 'bunny', coat: 'lilac', accent: 'mint', eyes: 'violet', ears: 'long', tail: 'puff', personality: 'sleepy'}},
-  {name: 'Ember', description: 'A slender charcoal cat with small ears, amber eyes, a fluffy tail and warm amber paws. Playful and energetic.', design: {...NOVA, family: 'cat', coat: 'charcoal', accent: 'amber', eyes: 'amber', ears: 'small', tail: 'fluffy', build: 'slender', personality: 'playful'}},
+  {name: 'Nova', modelUrl: '/models/nova.glb', description: 'A tiny cream fox-cat with huge ears, blue eyes, glowing cyan paws and a curled tail. Curious and friendly.', design: {...NOVA}},
+  {name: 'Mochi', modelUrl: '/models/mochi.glb', description: 'A round lilac bunny with long ears, violet eyes, a little puff tail and mint paws. Sleepy and cuddly.', design: {...NOVA, family: 'bunny', coat: 'lilac', accent: 'mint', eyes: 'violet', ears: 'long', tail: 'puff', personality: 'sleepy'}},
+  {name: 'Ember', modelUrl: '/models/ember.glb', description: 'A slender charcoal cat with small ears, amber eyes, a fluffy tail and warm amber paws. Playful and energetic.', design: {...NOVA, family: 'cat', coat: 'charcoal', accent: 'amber', eyes: 'amber', ears: 'small', tail: 'fluffy', build: 'slender', personality: 'playful'}},
 ];
 export function validateDesign(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Invalid pet design.');
@@ -32,8 +32,8 @@ export function validateBrief(input) {
   if (!input || typeof input !== 'object') throw new Error('Please describe your companion.');
   const name = typeof input.name === 'string' ? input.name.trim() : 'Nova';
   const description = typeof input.description === 'string' ? input.description.trim() : '';
-  if (!name || name.length > 32 || /[\x00-\x1f<>]/.test(name)) throw new Error('Use a pet name of 1–32 characters.');
-  if (description.length < 12 || description.length > 1200 || /[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(description)) throw new Error('Describe your pet in 12–1,200 characters.');
+  if (!name || name.length > 32 || /[\x00-\x1f<>]/.test(name)) throw new Error('Use a pet name of 1â€“32 characters.');
+  if (description.length < 12 || description.length > 1200 || /[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(description)) throw new Error('Describe your pet in 12â€“1,200 characters.');
   if (/\b(eight legs|six legs|tentacles|human face|humanoid|spider|octopus|snake)\b/i.test(description)) throw new Error('This version creates four-legged fox, cat and bunny companions. Try one of those shapes.');
   return {name, description};
 }

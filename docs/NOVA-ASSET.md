@@ -1,6 +1,6 @@
 # Nova asset preparation
 
-Status: generated, rigged, animated, inspected in Blender and connected to the website on 1 October 2026. The default Nova uses `public/models/nova.glb` in both the studio and room view. Other locally designed shapes remain procedural.
+Status: generated, rigged, animated, inspected in Blender and connected to the website on 1 October 2026. The default Nova uses `public/models/nova.glb` in both the studio and room view. Mochi and Ember use their own detailed assets; custom locally designed shapes remain procedural. See [all included companions](COMPANION-ASSETS.md).
 
 Reference: `public/nova-reference.png`.
 
@@ -14,7 +14,7 @@ Generated with the built-in image-generation tool, using the source artwork as t
 - Riggability check: quadruped, 0 credits.
 - Quadruped rig `v2.5-20260210`: 25 credits.
 - In-place `preset:quadruped:walk`: 10 credits.
-- Total: 75 credits, one mesh generation, one rig and one animation; no paid retries. Balance after completion: 925 credits.
+- Total: 75 credits, one mesh generation, one rig and one animation; no paid retries. Balance immediately after Nova completion: 925 credits.
 - Final GLB: 10,885,364 bytes, 38,040 triangles, three textures, 35 joints and one walk clip with 17 animation channels.
 - Actual mesh inspected from the front, side and back in Blender 4.5.9. The stylised coat is sculpted fur, not individual simulated strands. The generated eyes and whiskers remain part of the textured mesh; separate cinematic corneas were not added.
 - Browser checks confirmed real skeletal animation, preview rendering, original GLB download, switching between generated and procedural pets, and reload. Room integration is tested separately with the real tracking engine and a synthetic camera; physical phone validation remains pending.

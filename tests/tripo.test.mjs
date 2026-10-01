@@ -1,7 +1,7 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {mkdtemp,rm} from 'node:fs/promises';import {tmpdir} from 'node:os';import {join} from 'node:path';import {TripoJobs,validMedia} from '../server/tripo.mjs';
+import test from 'node:test';import assert from 'node:assert/strict';import {mkdtemp,rm} from 'node:fs/promises';import {tmpdir} from 'node:os';import {join} from 'node:path';import {TripoJobs,validMedia,meshOptions} from '../server/tripo.mjs';
 test('paid pipeline waits for reference approval and never duplicates ambiguous submissions',async()=>{
   const dir=await mkdtemp(join(tmpdir(),'creature-tripo-'));let submissions=0,fail=false;
-  const fetchFn=async(url,options)=>{if(options.method==='POST'){submissions++;if(fail)throw new Error('Unconfirmed paid request');return new Response(JSON.stringify({code:0,data:{task_id:'reference-1'}}));}return new Response(JSON.stringify({code:0,data:{status:'success',output:{generated_image_url:'https://cdn.tripo3d.ai/pet.png'}}}));};
+  const fetchFn=async(url,options)=>{if(url.endsWith('/account/balance'))return Response.json({code:0,data:{balance:100}});if(options.method==='POST'){submissions++;if(fail)throw new Error('Unconfirmed paid request');return new Response(JSON.stringify({code:0,data:{task_id:'reference-1'}}));}return new Response(JSON.stringify({code:0,data:{status:'success',output:{generated_image_url:'https://cdn.tripo3d.ai/pet.png'}}}));};
   try{
     const jobs=new TripoJobs({dir,key:'placeholder',enabled:true,fetchFn});await jobs.load();const job=await jobs.start({name:'Nova',description:'A cream fox'},'owner');
     const result=await jobs.poll(job.id,'owner');assert.equal(result.status,'awaiting_approval');assert.equal(submissions,1);
@@ -11,6 +11,9 @@ test('paid pipeline waits for reference approval and never duplicates ambiguous 
     await assert.rejects(restarted.approve(job.id,'owner'),e=>e.status===409);assert.equal(submissions,2);
   }finally{await rm(dir,{recursive:true,force:true});}
 });
+test('empty API balance prevents a paid request or generation record',async()=>{let posts=0;const jobs=new TripoJobs({key:'placeholder',enabled:true,fetchFn:async(url,options)=>{if(options.method==='POST')posts++;return Response.json({code:0,data:{balance:0,frozen:0}});}});await assert.rejects(jobs.start({name:'Nova',description:'cream fox'},'owner'),e=>e.status===402&&e.message.includes('API balance is 0'));assert.equal(posts,0);assert.equal(jobs.jobs.size,0);});
+test('insufficient funding preserves the approved reference for later',async()=>{let posts=0;const jobs=new TripoJobs({key:'placeholder',enabled:true,fetchFn:async(url,options)=>{if(options.method==='POST')posts++;return Response.json({code:0,data:{balance:10}});}});jobs.jobs.set('sample',{id:'sample',owner:'owner',status:'awaiting_approval',stage:'reference',referenceTaskId:'task_sample'});await assert.rejects(jobs.approve('sample','owner'),e=>e.status===402);assert.equal(jobs.owned('sample','owner').status,'awaiting_approval');assert.equal(posts,0);});
+test('quality mesh preset retains PBR detail within the mobile face budget',()=>{const options=meshOptions();assert.equal(options.model,'v3.1-20260211');assert.equal(options.face_limit,40000);assert.equal(options.texture_quality,'detailed');assert.equal(options.delight,true);assert.equal(meshOptions('P1-20260311').face_limit,20000);});
 test('asset URLs cannot smuggle credentials or arbitrary third-party downloads',()=>{
   assert.equal(validMedia('https://cdn.tripo3d.ai/pet.glb'),true);assert.equal(validMedia('https://tripo3d.ai.evil.invalid/a'),false);assert.equal(validMedia('https://secret@cdn.tripo3d.ai/pet.glb'),false);assert.equal(validMedia('file:///private'),false);
 });

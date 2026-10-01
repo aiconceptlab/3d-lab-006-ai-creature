@@ -13,3 +13,7 @@ The controller uses a small bounded 4-neighbour path grid with segment checks ag
 Optional person detection: MediaPipe EfficientDet in a classic worker, one 320 px frame about every 1.25 seconds. Camera pixels never enter Jev calls. Detection merely affects “look” preference; no person identity, measured distance or obstacle reconstruction is inferred.
 
 Sessions use signed, 24-hour cookies and a persisted signing secret under .data. Changing ACCESS_CODE invalidates existing cookies. Generated jobs are owner-bound and saved before paid requests. Ambiguous paid submissions are never automatically replayed. This is a single-instance POC, with in-memory request limits and local files.
+
+## Generated Nova asset
+
+The default Nova uses an included Tripo GLB: image reference → detailed textured mesh → quadruped check → rig → in-place walk. The same validated asset can be used by Studio and RoomSession. SkeletonUtils creates an independent rig for each view; geometry/materials are cloned and disposed per view, and immutable textures are shared through the asset cache. The importer validates skinning, animation and triangle limits before activating the pet. It updates bind matrices before measuring the grounded pivot and normalises height to 0.55 metres. This avoids floor clipping from a translated armature. Walking is driven by the actual speed from the shared motion controller. Rest restores the bind pose with subtle breathing; no extra generated sit/run clips are claimed.

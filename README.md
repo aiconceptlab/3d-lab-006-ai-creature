@@ -4,7 +4,7 @@ Describe a tiny companion. Meet it in animated 3D. Open the same website on a su
 
 ![Nova concept artwork](public/nova-concept.png)
 
-*The artwork above is an AI-generated visual direction. The actual demo uses a stylised procedural 3D pet; it does not generate cinematic fur from an image.*
+*The artwork above is the visual direction. The default Nova is now a real Tripo-generated, textured and rigged 3D character. Its fur uses sculpted geometry and textures rather than cinematic strand rendering. Other key-free designs use explicitly labelled procedural geometry.*
 
 ## Run it
 
@@ -22,6 +22,7 @@ On Windows use `Copy-Item .env.example .env` instead of `cp`. Open http://127.0.
 ## What works
 
 - Fox, cat and bunny companions: coat, eyes, luminous accents, ears, tail, body build and personality.
+- Included detailed Nova: 38,040 triangles, PBR textures, a 35-joint quadruped rig and an in-place walk. The same generated asset runs in the preview and room camera, with independent animation state.
 - Jev interprets a description into eight validated choices. Trusted geometry creates and animates the result. Without a key, deterministic local rules are explicitly labelled.
 - Walking, blinking, breathing, ear movement, virtual fetch, phone following, simulated energy and manually marked obstacle zones.
 - Saved designs on the current browser; animated GLB and design JSON downloads.
@@ -51,13 +52,15 @@ The pet occupies a small virtual play area around the placement point. Mark excl
 
 ## Optional image-to-3D experiment
 
-The primary demo needs no Tripo account. A disabled-by-default Tripo adapter can generate a reference, wait for approval, then request a low-poly mesh, quadruped rig check, rig and walking clip. It uses paid provider credits; it is an experimental **preview-only** path. It has contract tests but has not been verified with a live Tripo account. Imported rigs cannot enter room mode in this release. See [docs/TRIPO.md](docs/TRIPO.md).
+The included Nova needs no Tripo account or credits to play. Connect a Tripo developer API key to create another reference, approve it, then request a detailed mesh, quadruped rig check, rig and walking clip. Generated compatible rigs can enter room mode. Nova's complete live pipeline was checked on 1 October 2026 and consumed 75 API credits in one pass. Other generated creatures still require visual review; one good Nova is not a guarantee of quality for every prompt. See [docs/TRIPO.md](docs/TRIPO.md) and [Nova provenance](docs/NOVA-ASSET.md).
 
 ## Check it
 
 ```sh
 npm run check
 npm run test:browser
+npm run test:generated
+npm run test:sdk
 npm run test:live
 ```
 

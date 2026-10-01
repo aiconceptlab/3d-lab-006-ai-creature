@@ -24,7 +24,7 @@ function equalSecret(a,b){const ha=createHash('sha256').update(String(a)).digest
 export async function createApp({env=process.env,jev,fetchFn=fetch,development=false}={}) {
   const code=env.ACCESS_CODE||'',requireJev=env.REQUIRE_JEV==='1';
   jev??=new Jev({key:env.TYPESAFE_API_KEY,model:env.JEV_MODEL||'jev-latest',timeout:Number(env.JEV_TIMEOUT_MS)||3500,require:requireJev,fetchFn});
-  const jobs=new TripoJobs({key:env.TRIPO_API_KEY,enabled:env.ENABLE_TRIPO==='1',dir:resolve(ROOT,env.DATA_DIR||'.data','jobs'),imageModel:env.TRIPO_IMAGE_MODEL||'chat_image_2.5_flare',meshModel:env.TRIPO_MESH_MODEL||'P1-20260311',fetchFn});await jobs.load();
+  const jobs=new TripoJobs({key:env.TRIPO_API_KEY,enabled:env.ENABLE_TRIPO==='1',dir:resolve(ROOT,env.DATA_DIR||'.data','jobs'),imageModel:env.TRIPO_IMAGE_MODEL||'chat_image_2.5_flare',meshModel:env.TRIPO_MESH_MODEL||'v3.1-20260211',fetchFn});await jobs.load();
   const sessions=await Sessions.open(resolve(ROOT,env.DATA_DIR||'.data'),code),rate=createRateLimiter();
   let vite=null;if(development){const {createServer}=await import('vite');vite=await createServer({root:ROOT,server:{middlewareMode:true,host:'127.0.0.1'},appType:'spa'});}
   function send(res,status,data){res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(data));}
@@ -52,6 +52,7 @@ export async function createApp({env=process.env,jev,fetchFn=fetch,development=f
           res.setHeader('Set-Cookie',`creature_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=86400${secure?'; Secure':''}`);return send(res,200,{ok:true});
         }
         if(!authorised)throw new ProviderError('Enter the access code to continue.',401);
+        if(req.method==='GET'&&url.pathname==='/api/tripo/balance'){rate('balance:'+session.owner,12,60000);return send(res,200,await jobs.balance());}
         if(req.method==='POST'&&url.pathname==='/api/design'){
           rate('design:'+session.owner,15,3600000);const input=await readJson(req),brief=validateBrief(input);if(input.mode==='local'&&requireJev)throw new ProviderError('This workshop requires Jev creation.',403);const result=input.mode==='local'?{design:localDesign(brief.description),source:'local',note:'Local design demo · no AI request made'}:await jev.design(brief);return send(res,200,{...brief,...result});
         }

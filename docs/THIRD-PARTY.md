@@ -11,3 +11,5 @@ MediaPipe Tasks Vision: Apache-2.0; package/runtime licence notice retained here
 Fonts: DM Sans and Manrope via Google Fonts, SIL Open Font Licence. Remote fonts are optional and the UI has system-font fallbacks. The app requests their stylesheet/font files; no camera data is sent to Google Fonts.
 
 Nova artwork: generated for this project with Codex's built-in image-generation tool. It is illustrative, not an app capture. No Higgsfield, Tripo or Jev performance claim is inferred from that illustration.
+
+Nova 3D asset: generated for AI Concept Lab from the project reference using Tripo's API, then rigged and animated with the quadruped walk preset. The public asset is public/models/nova.glb; its provenance and measured properties are recorded in docs/NOVA-ASSET.md. Vendor service terms apply separately from the application's MIT source licence. marketing/app-preview.png is an actual capture of that model.

@@ -36,7 +36,9 @@ export async function createApp({env=process.env,jev,fetchFn=fetch,development=f
     const secure=String(req.headers['x-forwarded-proto']||'')==='https';
     try {
       const url=new URL(req.url,'http://localhost');
-      if(decodeURIComponent(url.pathname).split('/').some(p=>p.startsWith('.'))){res.writeHead(404);return res.end('Not found');}
+      const pathname=decodeURIComponent(url.pathname);
+      const compiledDependency=!!vite&&/^\/node_modules\/\.vite\/deps\/[A-Za-z0-9_-]+\.js(?:\.map)?$/.test(pathname);
+      if(pathname.split('/').some(p=>p.startsWith('.'))&&!compiledDependency){res.writeHead(404);return res.end('Not found');}
       if(url.pathname.startsWith('/api/')) {
         const origin=req.headers.origin;
         if(origin&&new URL(origin).host!==req.headers.host)throw new ProviderError('This request came from another website.',403);

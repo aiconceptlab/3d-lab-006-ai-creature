@@ -6,3 +6,4 @@ test('generated pets reject missing rigs or animations before entering room mode
 
 
 test('translated source rigs remain grounded after normalisation',()=>{const source=asset();source.scene.position.y=.411;source.scene.updateMatrixWorld(true);const pet=createImportedCreature(source);pet.group.updateMatrixWorld(true);pet.group.traverse(o=>{if(o.isSkinnedMesh)o.computeBoundingBox();});const box=new THREE.Box3().setFromObject(pet.group);assert.ok(Math.abs(box.min.y)<1e-6);assert.ok(Math.abs(box.max.y-.55)<1e-6);pet.dispose();});
+test('incomplete quadruped limb chains are refused instead of silently playing a partial gait',()=>{const source=asset();source.scene.getObjectByName('Leg').name='tripo0_Right_Limb_0';assert.throws(()=>createImportedCreature(source),/incomplete leg rig/);});

@@ -14,7 +14,7 @@ Generated meshes must contain animation and skinning and pass a triangle budget.
 
 ## Nova quality workflow
 
-`public/nova-reference.png` is a clean, full-body reference created from the existing Nova concept artwork with the built-in image generator. Its generation brief and provenance are in `docs/NOVA-ASSET.md`. The completed animated asset is public/models/nova.glb.
+`public/nova-reference.png` is a clean, full-body reference created from the existing Nova concept artwork with the built-in image generator. Its generation brief and provenance are in `docs/NOVA-ASSET.md`. The current bundled asset is public/models/nova-living.glb, with five subsequent Blender-authored clips; see ANIMATION.md. New Tripo generation retains its original vendor walk until separately reviewed and baked.
 
 The default mesh model is now H Series `v3.1-20260211`, with 40,000 faces, detailed PBR textures, and lighting removal. P1 remains configurable and uses its supported 20,000-face ceiling. The website checks the actual developer API balance before starting a reference or approving the paid mesh pipeline. Having an API key does not imply available credits.
 

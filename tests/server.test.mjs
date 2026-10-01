@@ -1,6 +1,17 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {mkdtemp,rm} from 'node:fs/promises';import {tmpdir} from 'node:os';import {join} from 'node:path';
 import {createApp,createRateLimiter} from '../server.mjs';import {Sessions} from '../server/sessions.mjs';
 import http from 'node:http';
+test('development serves compiled dependency modules while keeping environment and private data hidden',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'creature-development-'));
+  const app=await createApp({development:true,env:{DATA_DIR:dir}});await new Promise(r=>app.server.listen(0,'127.0.0.1',r));
+  const base='http://127.0.0.1:'+app.server.address().port;
+  try{
+    const module=await fetch(base+'/src/imported-creature.js');assert.equal(module.status,200);
+    const source=await module.text(),urls=[...source.matchAll(/['"](\/node_modules\/\.vite\/deps\/[^'"]+)['"]/g)].map(m=>m[1]);
+    assert.ok(urls.length>=3);for(const url of urls)assert.equal((await fetch(base+url)).status,200);
+    for(const url of ['/.env','/.data/session-secret','/node_modules/.vite/deps/.env'])assert.equal((await fetch(base+url)).status,404);
+  }finally{await app.close();await rm(dir,{recursive:true,force:true});}
+});
 test('sessions survive a restart but reject tampering, expiry and access-code changes',async()=>{
   const dir=await mkdtemp(join(tmpdir(),'creature-session-'));try{
     const a=await Sessions.open(dir,'door');const {token,session}=a.issue();const b=await Sessions.open(dir,'door');

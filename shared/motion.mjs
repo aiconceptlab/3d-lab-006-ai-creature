@@ -86,7 +86,7 @@ export class PetMotion {
     if(target&&(!this.lastTarget||distance(target,this.lastTarget)>.16||!this.path.length&&distance(this.position,target)>.05)) {this.path=findPath(this.position,target,this.area,this.obstacles);this.lastTarget={...target};}
     const waypoint=this.path[0]; this.speed=0;
     if(waypoint) {
-      const d=distance(this.position,waypoint), speed=this.action==='chase'?.65:.36, move=Math.min(d,speed*dt);
+      const d=distance(this.position,waypoint), speed=this.action==='chase'?.20:.10, move=Math.min(d,speed*dt);
       const next=d?{x:this.position.x+(waypoint.x-this.position.x)/d*move,z:this.position.z+(waypoint.z-this.position.z)/d*move}:waypoint;
       if(segmentSafe(this.position,next,this.area,this.obstacles)) {this.position=next;this.speed=dt?move/dt:0;this.turn(Math.atan2(waypoint.x-next.x,waypoint.z-next.z),dt);if(d<=speed*dt+.015)this.path.shift();}
       else {this.path=[];this.lastTarget=null;}

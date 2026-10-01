@@ -1,0 +1,34 @@
+// Render the actual browser assets from the side, with deterministic clip times.
+import {chromium} from 'playwright';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {createCanvas,loadImage} from '@napi-rs/canvas';
+import {createServer} from 'vite';
+const html=`<!doctype html><html><style>body{margin:0;background:#111e22;color:#eaf5ee;font:20px system-ui}header{padding:20px 30px;display:flex;justify-content:space-between}#stage{height:580px}small{color:#97b7b0;font-size:13px}</style><header><b id="title">Companion animation review</b><small>Actual included 3D model · Blender animations</small></header><div id="stage"></div><script type="module">
+import {Studio} from '/src/view.js';import {loadCreatureAsset,createImportedCreature} from '/src/imported-creature.js';import {PRESETS} from '/shared/design.mjs';
+const studio=new Studio(document.querySelector('#stage'),PRESETS[0].design);studio.pause();
+studio.camera.position.set(1.25,.48,.22);studio.controls.target.set(0,.27,0);studio.controls.update();
+let pet;window.review={async load(name){const asset=await loadCreatureAsset('/models/'+name+'-living.glb');pet=createImportedCreature(asset);studio.useCreature(pet);window.review.sample('Idle',0);},sample(clip,time){pet.mixer.stopAllAction();const a=pet.mixer.clipAction(pet.clips().find(c=>c.name===clip));a.reset().setEffectiveWeight(1).setEffectiveTimeScale(1).play();a.time=time;pet.mixer.update(0);studio.pet.group.updateMatrixWorld(true);studio.renderer.render(studio.scene,studio.camera);document.querySelector('#title').textContent=clip;},async play(clip,speed,seconds,name){document.querySelector('#title').textContent=name+' · '+clip;let last=performance.now(),end=last+seconds*1000;await new Promise(resolve=>{function frame(now){pet.animate(Math.min(.05,(now-last)/1000),speed,clip.toLowerCase());last=now;studio.renderer.render(studio.scene,studio.camera);if(now<end)requestAnimationFrame(frame);else resolve();}requestAnimationFrame(frame);});}};window.ready=true;
+</script></html>`;
+await mkdir('artifacts/animation-review',{recursive:true});const app=await createServer({server:{port:0,host:'127.0.0.1'}});await app.listen();
+const browser=await chromium.launch({channel:process.env.BROWSER_CHANNEL||'msedge',headless:true});
+try{
+  const context=await browser.newContext({viewport:{width:960,height:650},recordVideo:{dir:'artifacts/animation-review',size:{width:960,height:650}}}),page=await context.newPage();
+  page.on('pageerror',e=>console.error(e.message));
+  page.on('console',m=>{if(m.type()==='error')console.error(m.text());});
+  page.on('requestfailed',r=>console.error(r.url()+' '+r.failure()?.errorText));
+  await page.route('**/animation-review',route=>route.fulfill({contentType:'text/html',body:html}));await page.goto('http://127.0.0.1:'+app.httpServer.address().port+'/animation-review');await page.waitForFunction(()=>window.ready);
+  const canvas=createCanvas(1280,780),ctx=canvas.getContext('2d');ctx.fillStyle='#111e22';ctx.fillRect(0,0,1280,780);
+  for(const [row,name] of ['nova','mochi','ember'].entries()){
+    await page.evaluate(name=>window.review.load(name),name);
+    for(let column=0;column<4;column++){
+      await page.evaluate(t=>window.review.sample('Walk',t),column*.4);
+      const bytes=await page.locator('#stage').screenshot();await writeFile('artifacts/animation-review/'+name+'-walk-'+column+'.png',bytes);ctx.drawImage(await loadImage(bytes),column*320,row*260,320,225);
+    }
+    // Static clip sampling changes mixer state; use a fresh runtime so the
+    // recorded labels and transitions reflect the normal application's state.
+    await page.evaluate(name=>window.review.load(name),name);
+    for(const [clip,speed,seconds] of [['Idle',0,2],['Walk',.1,3],['Trot',.20,3],['Look',0,2],['Rest',0,2]])await page.evaluate(args=>window.review.play(...args),[clip,speed,seconds,name]);
+  }
+  await writeFile('artifacts/animation-review/contact-sheet.png',canvas.toBuffer('image/png'));
+  const video=page.video();await context.close();await video.saveAs('artifacts/animation-review/living-companions.webm');console.log('Actual animation review saved: artifacts/animation-review/living-companions.webm');
+}finally{await browser.close();await app.close();}

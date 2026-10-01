@@ -2,7 +2,7 @@
 
 ## Passed
 
-- 29 automated tests (including generated-rig isolation, animation, grounded scaling and credit guards): route clearance, inaccessible targets, fetch completion, tracking pause, follow stand-off, low-energy override, stale-response epoch triggers, Jev request/response contract, malformed outputs, sanitised provider failures, invalid-key network circuit, explicit demo mode, geometry changes, signed-session restart/tamper/expiry, room adapter lifecycle with a fixture, API authorisation/CSRF/body-size/static-secret protection, public-credit guard, paid-stage approval/no duplicate retry and asset URL checks.
+- 31 automated tests (including generated-rig isolation, incomplete limb rejection, animation, grounded scaling, development-module serving with secret protection and credit guards): route clearance, inaccessible targets, fetch completion, tracking pause, follow stand-off, low-energy override, stale-response epoch triggers, Jev request/response contract, malformed outputs, sanitised provider failures, invalid-key network circuit, explicit demo mode, geometry changes, signed-session restart/tamper/expiry, room adapter lifecycle with a fixture, API authorisation/CSRF/body-size/static-secret protection, public-credit guard, paid-stage approval/no duplicate retry and asset URL checks.
 - Production build with pinned dependencies and vision-model checksum.
 - Production dependency audit: zero known vulnerabilities at the time of checking.
 - Release index scan: zero matches for saved local credentials or recognised credential patterns; private environment/data paths excluded.
@@ -47,3 +47,12 @@ The updated real-engine smoke test also verifies GeneratedCompanion is present i
 ## Provider and preview repair
 
 The open in-app browser was still executing a PLAY 001 bundle. Reloading loaded 3D LAB 006 and the generated Mochi/Ember assets. Included sample descriptions now preserve their detailed asset even if Jev chooses a slightly different recipe. A loading panel covers the temporary procedural placeholder. The studio follows the pet while preserving orbit controls; moving-pet framing and original downloads are checked in the generated-model browser harness. No Tripo generation was needed for this repair.
+
+## Living animation release
+
+- Blender 4.5.9: repaired Ember's incomplete rear-left chain and reweighted 3,425 affected vertices. All three models have Idle, Walk, Trot, Look and Rest; geometry counts remain 38,040 / 39,875 / 38,521 triangles. No further Tripo credits consumed.
+- Actual GLB CPU audit passes for every pet: complete chains, substantially weighted and deformed vertices on all four paws, two locomotion gaits, stationary paw drift below 1 mm, matching loop endpoints, head turns and bounded 60 Hz frame changes through blended transitions and repeated cycles. This audit is part of npm run check and CI.
+- Production browser checks pass for all three: all four limb chains change during chase, Trot is selected, five clips are available, movement stays framed, GLB downloads match source bytes, and an older saved Mochi URL migrates to the new model. Zero runtime exceptions.
+- Desktop, iPhone and Pixel layout checks pass; the real room binary with synthetic camera input loads each new model, exits correctly and stops the camera. This remains a synthetic test, not physical phone tracking.
+- Actual textured side-view animation frames and a recording were rendered in the browser for inspection. The recording uses the same runtime blending/cadence as the app. Rest is a standing breather; generated facial blinking, sitting and lying down are not implemented.
+- Development dependency requests work again without serving hidden environment/private files. The security regression check runs in the 31-test suite.

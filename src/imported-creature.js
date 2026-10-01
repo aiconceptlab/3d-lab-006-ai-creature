@@ -19,6 +19,12 @@ export function createImportedCreature(asset,{height=.55,yaw=-Math.PI/2}={}){
   let triangles=0,skinned=false;asset.scene.traverse(o=>{if(o.isSkinnedMesh)skinned=true;if(o.geometry)triangles+=(o.geometry.index?.count||o.geometry.attributes.position.count)/3;});
   if(!asset.animations.length||!skinned)throw new Error('The pet needs a skinned mesh and a walking animation.');
   if(triangles>100000)throw new Error('The pet exceeds the mobile triangle budget.');
+  const rigBones=[];asset.scene.traverse(o=>{if(o.isBone)rigBones.push(o);});
+  if(rigBones.some(b=>/[01]_(Left|Right)_Limb_\d+$/.test(b.name))){
+    for(const leg of ['0_Left','0_Right','1_Left','1_Right'])for(let joint=0;joint<3;joint++){
+      if(!rigBones.some(b=>b.name.endsWith(leg+'_Limb_'+joint)))throw new Error('This companion has an incomplete leg rig. Repair it in Blender before using it.');
+    }
+  }
   const group=new THREE.Group();group.name='GeneratedCompanion';const character=clone(asset.scene),pivot=new THREE.Group();pivot.rotation.y=yaw;pivot.add(character);group.add(pivot);
   // Each runtime owns its geometry/materials and skeleton. Texture data is shared
   // by the immutable cached asset and never disposed by an individual session.
@@ -28,10 +34,52 @@ export function createImportedCreature(asset,{height=.55,yaw=-Math.PI/2}={}){
   const measure=()=>{group.updateMatrixWorld(true);character.traverse(o=>{if(o.isSkinnedMesh)o.computeBoundingBox();});return new THREE.Box3().setFromObject(group);};
   const box=measure(),size=box.getSize(new THREE.Vector3());if(!(size.y>0&&Number.isFinite(size.y)))throw new Error('The pet has invalid dimensions.');
   pivot.scale.setScalar(height/size.y);const scaled=measure(),center=scaled.getCenter(new THREE.Vector3());pivot.position.set(-center.x,-scaled.min.y,-center.z);group.updateMatrixWorld(true);
-  const mixer=new THREE.AnimationMixer(character),walkClip=asset.animations.find(c=>/walk/i.test(c.name))||asset.animations[0],walk=mixer.clipAction(walkClip);walk.play();walk.enabled=false;
-  let age=0,walking=false,disposed=false;
+  const mixer=new THREE.AnimationMixer(character),walkClip=asset.animations.find(c=>/walk/i.test(c.name))||asset.animations[0];
+  const clipFor=name=>asset.animations.find(c=>c.name.toLowerCase()===name.toLowerCase());
+  const actions={Walk:mixer.clipAction(walkClip)};
+  for(const name of ['Idle','Trot','Look','Rest'])if(clipFor(name))actions[name]=mixer.clipAction(clipFor(name));
+  const paw=[];character.traverse(o=>{if(o.isBone&&/0_Left_Limb_2/.test(o.name))paw.push(o);});
+  // Calibrate cadence from the actual normalised paw motion during stance.
+  // This also accounts for different creature sizes and GLB parent scales.
+  const nominal={Walk:.22,Trot:.45};
+  if(paw.length&&actions.Idle){
+    for(const name of ['Walk','Trot'])if(actions[name]){
+      const a=actions[name],duration=a.getClip().duration,dt=duration*.05;
+      a.reset().play();a.time=duration*.07;mixer.update(0);group.updateMatrixWorld(true);
+      const before=paw[0].getWorldPosition(new THREE.Vector3());
+      a.time+=dt;mixer.update(0);group.updateMatrixWorld(true);
+      const rate=paw[0].getWorldPosition(new THREE.Vector3()).distanceTo(before)/dt;
+      if(Number.isFinite(rate)&&rate>.001)nominal[name]=rate;
+      a.stop();
+    }
+  }
+  let current=null,disposed=false;
+  const activate=name=>{
+    if(current===name)return;
+    const previous=actions[current],next=actions[name];
+    if(!next)return;
+    const phase=previous?previous.time/previous.getClip().duration%1:0;
+    next.reset().setEffectiveWeight(1).fadeIn(.22).play();
+    if(['Walk','Trot'].includes(name)&&['Walk','Trot'].includes(current))next.time=phase*next.getClip().duration;
+    previous?.fadeOut(.22);current=name;
+  };
+  activate(actions.Idle?'Idle':'Walk');
+  if(!actions.Idle)actions.Walk.enabled=false;
   return {group,character,mixer,triangles,generated:true,
-    animate(dt,speed){if(disposed)return;age+=dt;const moving=speed>.01;if(moving!==walking){walking=moving;walk.enabled=moving;if(moving)walk.reset().play();}walk.timeScale=Math.min(1.8,Math.max(.35,speed/.22));mixer.update(dt);pivot.scale.setScalar(height/size.y*(moving?1:1+Math.sin(age*2.1)*.0025));},
+    animate(dt,speed,behaviour='idle'){
+      if(disposed)return;
+      const moving=speed>.01;
+      if(actions.Idle){
+        const name=moving?(speed>.15&&actions.Trot?'Trot':'Walk'):behaviour==='rest'&&actions.Rest?'Rest':behaviour==='look'&&actions.Look?'Look':'Idle';
+        activate(name);
+        if(moving)actions[name].setEffectiveTimeScale(Math.max(.1,Math.min(12,speed/nominal[name])));
+        else actions[name].setEffectiveTimeScale(1);
+      }else{
+        actions.Walk.enabled=moving;actions.Walk.timeScale=Math.min(1.8,Math.max(.35,speed/.22));
+      }
+      mixer.update(dt);
+    },
+    animationState:()=>({clip:current,cadence:actions[current]?.getEffectiveTimeScale(),nominalSpeeds:{...nominal}}),
     clips:()=>asset.animations,
     dispose(){if(disposed)return;disposed=true;mixer.stopAllAction();mixer.uncacheRoot(character);character.traverse(o=>{o.geometry?.dispose();if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());});}
   };

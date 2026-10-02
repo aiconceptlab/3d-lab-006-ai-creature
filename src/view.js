@@ -25,7 +25,7 @@ export class Studio {
   replace(design){this.scene.remove(this.pet.group);this.pet.dispose();this.pet=createCreature(design);this.scene.add(this.pet.group);}
   useCreature(creature){this.scene.remove(this.pet.group);this.pet.dispose();this.pet=creature;this.scene.add(creature.group);}
   sync(motion,dt){
-    this.pet.group.position.set(motion.position.x,0,motion.position.z);this.pet.group.rotation.y=motion.yaw;this.pet.animate(dt,motion.speed,motion.action,motion.tracking==='lost'?null:motion.expression,motion.requestEpoch);
+    this.pet.group.position.set(motion.position.x,0,motion.position.z);this.pet.group.rotation.y=motion.yaw;this.pet.animate(dt,motion.speed,motion.action,motion.tracking==='lost'?null:motion.expression,motion.requestEpoch,motion.angularSpeed);
     // Keep the companion framed as it explores, preserving the user's orbit.
     const focus=new THREE.Vector3(motion.position.x,.26,motion.position.z),shift=focus.sub(this.controls.target).multiplyScalar(1-Math.exp(-12*dt));
     this.controls.target.add(shift);this.camera.position.add(shift);

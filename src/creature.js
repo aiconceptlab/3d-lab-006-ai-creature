@@ -69,8 +69,8 @@ export function createCreature(input) {
   }head.add(tufts);
   for(let i=0;i<5;i++)oval(head,coat,[(i-2)*.029,.165+(i===2?.012:0),-.003],[.025,.032,.03],'ForeheadTuft'+i);
   const state={time:0,blink:0};
-  function animate(dt,speed=0,action='idle',look=0){state.time+=dt;const t=state.time;torso.position.y=speed>0?Math.sin(t*11)*.006:Math.sin(t*2.2)*.004;torso.scale.y=action==='rest'?.93:1;head.rotation.z=Math.sin(t*.65)*.07;head.rotation.y=THREE.MathUtils.lerp(head.rotation.y,Math.max(-.3,Math.min(.3,look)),.06);head.rotation.x=action==='rest'?.13:Math.sin(t*.85)*.035;
-    for(const {hip,phase}of hips){hip.rotation.x=speed>.01?Math.sin(t*(speed>.45?14:10)+phase)*.44:0;}
+  function animate(dt,speed=0,action='idle',expression=null,epoch=null,angularSpeed=0){const look=0;state.time+=dt;const t=state.time;torso.position.y=speed>0?Math.sin(t*11)*.006:Math.sin(t*2.2)*.004;torso.scale.y=action==='rest'?.93:1;head.rotation.z=Math.sin(t*.65)*.07;head.rotation.y=THREE.MathUtils.lerp(head.rotation.y,Math.max(-.3,Math.min(.3,look)),.06);head.rotation.x=action==='rest'?.13:Math.sin(t*.85)*.035;
+    for(const {hip,phase}of hips){hip.rotation.x=speed>.01||Math.abs(angularSpeed)>.03?Math.sin(t*(speed>.45?14:10)+phase)*.44:0;}
     ears.forEach((ear,i)=>{ear.rotation.x=Math.sin(t*1.5+i)*.065;});tail.rotation.y=Math.sin(t*2)*(action==='chase'?.3:.13);
     const phase=t%4.7, blink=phase>4.35&&phase<4.55?Math.max(.06,Math.abs(phase-4.45)/.1):1;eyes.forEach(eye=>eye.scale.y=blink);
   }

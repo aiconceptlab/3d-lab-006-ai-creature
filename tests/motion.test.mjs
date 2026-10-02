@@ -20,7 +20,7 @@ test('idle companions vary their poses, and tracking loss freezes a held reactio
 test('long exploration pauses to emote; a user ball command still takes priority',()=>{
   const pet=new PetMotion({random:()=>.95});pet.lifeTime=12;pet.setAction('explore');for(let i=0;i<20&&!pet.expression;i++)pet.update(.05);
   assert.equal(pet.expression,'Curious');assert.equal(pet.speed,0);assert.equal(pet.action,'look');
-  pet.setBall({x:-1,z:0});for(let i=0;i<20;i++)pet.update(.05);assert.equal(pet.action,'chase');assert.equal(pet.expression,null);assert.ok(pet.speed>0);
+  pet.setBall({x:-1,z:0});for(let i=0;i<80;i++)pet.update(.05);assert.equal(pet.action,'chase');assert.equal(pet.expression,null);assert.ok(pet.speed>0);
 });
 
 test('route skirts a blocking zone; every segment and arrival stay safe',()=>{
@@ -64,4 +64,11 @@ test('manual actions advance the epoch; exclusions cannot cover the pet',()=>{
 test('sharp direction changes turn before travelling and never strafe',()=>{
  const pet=new PetMotion();pet.setBall({x:0,z:-1});const start={...pet.position};pet.update(.05);assert.deepEqual(pet.position,start);
  let travelled=0;for(let i=0;i<160;i++){const before={...pet.position};pet.update(.05);const dx=pet.position.x-before.x,dz=pet.position.z-before.z;if(Math.hypot(dx,dz)>.00001){const heading=Math.atan2(dx,dz),error=Math.atan2(Math.sin(heading-pet.yaw),Math.cos(heading-pet.yaw));assert.ok(Math.abs(error)<.35);travelled+=Math.hypot(dx,dz);}}assert.ok(travelled>.8);
+});
+
+
+test('orbiting or moving the phone does not rotate a stationary companion',()=>{
+ const pet=new PetMotion();pet.yaw=.7;
+ for(const action of ['idle','look','rest']){pet.setAction(action);for(let i=0;i<200;i++){pet.viewer={x:Math.sin(i*.1),z:Math.cos(i*.1)};pet.update(.05);assert.equal(pet.yaw,.7);assert.equal(pet.angularSpeed,0);}}
+ pet.setBall({x:-1,z:0});pet.update(.05);assert.ok(pet.angularSpeed<0);pet.tracking='lost';pet.update(.05);assert.equal(pet.angularSpeed,0);
 });

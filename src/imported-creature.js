@@ -11,7 +11,7 @@ async function prepareTextures(asset){
 }
 export async function loadCreatureAsset(url){
   const resolved=new URL(url,location.origin);
-  if(!(resolved.origin===location.origin&&resolved.pathname.startsWith('/models/'))&&!(resolved.protocol==='https:'&&/(^|\.)tripo3d\.(ai|com)$/.test(resolved.hostname)&&!resolved.username&&!resolved.password))throw new Error('This model address is not supported.');
+  if(!(resolved.origin===location.origin&&(resolved.pathname.startsWith('/models/')||/^\/api\/generations\/[a-f0-9-]{36}\/model\.glb$/.test(resolved.pathname)))&&!(resolved.protocol==='https:'&&/(^|\.)tripo3d\.(ai|com)$/.test(resolved.hostname)&&!resolved.username&&!resolved.password))throw new Error('This model address is not supported.');
   if(!cache.has(url))cache.set(url,new GLTFLoader().loadAsync(url).then(prepareTextures).catch(error=>{cache.delete(url);throw error;}));
   return cache.get(url);
 }
@@ -42,7 +42,7 @@ export function createImportedCreature(asset,{height=.55,yaw}={}){
   const mixer=new THREE.AnimationMixer(character),walkClip=asset.animations.find(c=>/walk/i.test(c.name))||asset.animations[0];
   const clipFor=name=>asset.animations.find(c=>c.name.toLowerCase()===name.toLowerCase());
   const actions={Walk:mixer.clipAction(walkClip)};
-  for(const name of ['Idle','Trot','Look','Rest','Curious','Playful','Shy','Sleepy','Greet','Stretch'])if(clipFor(name))actions[name]=mixer.clipAction(clipFor(name));
+  for(const name of ['Idle','Trot','Look','Rest','Curious','Playful','Shy','Sleepy','Greet','Stretch','TurnLeft','TurnRight'])if(clipFor(name))actions[name]=mixer.clipAction(clipFor(name));
   const paw=[];character.traverse(o=>{if(o.isBone&&/0_Left_Limb_2/.test(o.name))paw.push(o);});
   // Calibrate cadence from the actual normalised paw motion during stance.
   // This also accounts for different creature sizes and GLB parent scales.
@@ -72,16 +72,17 @@ export function createImportedCreature(asset,{height=.55,yaw}={}){
   activate(actions.Idle?'Idle':'Walk');
   if(!actions.Idle)actions.Walk.enabled=false;
   return {group,character,mixer,triangles,generated:true,
-    animate(dt,speed,behaviour='idle',expression=null,expressionEpoch=null){
+    animate(dt,speed,behaviour='idle',expression=null,expressionEpoch=null,angularSpeed=0){
       if(disposed)return;
       const moving=speed>.01;
       if(actions.Idle){
-        const name=moving?(speed>.15&&actions.Trot?'Trot':'Walk'):expression&&actions[expression]?expression:behaviour==='rest'&&actions.Rest?'Rest':behaviour==='look'&&actions.Look?'Look':'Idle';
+        const turn=angularSpeed>0?'TurnLeft':'TurnRight';
+        const name=!moving&&Math.abs(angularSpeed)>.03&&actions[turn]?turn:moving?(speed>.15&&actions.Trot?'Trot':'Walk'):expression&&actions[expression]?expression:behaviour==='rest'&&actions.Rest?'Rest':behaviour==='look'&&actions.Look?'Look':'Idle';
         if(expression&&current===name&&expressionEpoch!==null&&expressionEpoch!==lastExpressionEpoch)actions[name].time=0;
         lastExpressionEpoch=expressionEpoch;
         activate(name);
         if(moving)actions[name].setEffectiveTimeScale(Math.max(.1,Math.min(12,speed/nominal[name])));
-        else actions[name].setEffectiveTimeScale(1);
+        else actions[name].setEffectiveTimeScale(name.startsWith('Turn')?Math.max(.1,Math.min(2,Math.abs(angularSpeed)/.65)):1);
       }else{
         actions.Walk.enabled=moving;actions.Walk.timeScale=Math.min(1.8,Math.max(.35,speed/.22));
       }

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { launchAddresses } from './server/network.mjs';
 import { Jev, ProviderError } from './server/jev.mjs';
 import { TripoJobs } from './server/tripo.mjs';
+import {createFinisher,findBlender} from './server/finish.mjs';
 import { Sessions } from './server/sessions.mjs';
 import { validateBrief, localDesign } from './shared/design.mjs';
 import { ACTIONS, fallbackDecision } from './shared/motion.mjs';
@@ -22,11 +23,12 @@ export function createRateLimiter(now=Date.now) {
 }
 export async function readJson(req) {if(!String(req.headers['content-type']||'').startsWith('application/json'))throw new ProviderError('Use a JSON request.',415);let bytes=0;const chunks=[];for await(const chunk of req){bytes+=chunk.length;if(bytes>16384)throw new ProviderError('Request is too large.',413);chunks.push(chunk);}try{return JSON.parse(Buffer.concat(chunks).toString());}catch{throw new ProviderError('Invalid JSON.',400);}}
 function equalSecret(a,b){const ha=createHash('sha256').update(String(a)).digest(),hb=createHash('sha256').update(String(b)).digest();return timingSafeEqual(ha,hb);}
-export async function createApp({env=process.env,jev,fetchFn=fetch,development=false}={}) {
+export async function createApp({env=process.env,jev,fetchFn=fetch,development=false,finishFn}={}) {
   const code=env.ACCESS_CODE||'',requireJev=env.REQUIRE_JEV==='1';
   const provider=env.JEV_PROVIDER||'typesafe';
   jev??=new Jev({key:provider==='jev-ai'?env.JEV_AI_API_KEY:env.TYPESAFE_API_KEY,provider,model:env.JEV_MODEL||'jev-latest',timeout:Number(env.JEV_TIMEOUT_MS)||3500,require:requireJev,fetchFn});
-  const jobs=new TripoJobs({key:env.TRIPO_API_KEY,enabled:env.ENABLE_TRIPO==='1',dir:resolve(ROOT,env.DATA_DIR||'.data','jobs'),imageModel:env.TRIPO_IMAGE_MODEL||'chat_image_2.5_flare',meshModel:env.TRIPO_MESH_MODEL||'v3.1-20260211',fetchFn});await jobs.load();
+  const jobDir=resolve(ROOT,env.DATA_DIR||'.data','jobs'),blender=env.ENABLE_TRIPO==='1'?await findBlender(env.BLENDER_PATH):null;
+  const jobs=new TripoJobs({key:env.TRIPO_API_KEY,enabled:env.ENABLE_TRIPO==='1',dir:jobDir,finishFn:finishFn||createFinisher({blender,dir:jobDir,fetchFn}),imageModel:env.TRIPO_IMAGE_MODEL||'chat_image_2.5_flare',meshModel:env.TRIPO_MESH_MODEL||'v3.1-20260211',fetchFn});await jobs.load();
   const sessions=await Sessions.open(resolve(ROOT,env.DATA_DIR||'.data'),code),rate=createRateLimiter();
   let vite=null;if(development){const {createServer}=await import('vite');vite=await createServer({root:ROOT,server:{middlewareMode:true,host:'127.0.0.1'},appType:'spa'});}
   function send(res,status,data){res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(data));}
@@ -49,13 +51,15 @@ export async function createApp({env=process.env,jev,fetchFn=fetch,development=f
         const cookie=cookies.find(x=>x.startsWith('creature_session='))?.slice(17);
         const session=sessions.read(cookie);
         const authorised=!!session;
-        if(req.method==='GET'&&url.pathname==='/api/config')return send(res,200,{authRequired:!!code,authorised,jev:providerAccess&&!!jev.key,jevProvider:jev.provider||provider,jevStatus:!providerAccess||!jev.key?'unavailable':jev.authRejected?'rejected':jev.authenticated?'authenticated':'configured',requireJev,tripo:providerAccess&&jobs.available,designMode:providerAccess&&jev.key?'jev':'local'});
+        if(req.method==='GET'&&url.pathname==='/api/config')return send(res,200,{authRequired:!!code,authorised,jev:providerAccess&&!!jev.key,jevProvider:jev.provider||provider,jevStatus:!providerAccess||!jev.key?'unavailable':jev.authRejected?'rejected':jev.authenticated?'authenticated':'configured',requireJev,tripo:providerAccess&&jobs.available,finishing:!!blender||!!finishFn,designMode:providerAccess&&jev.key?'jev':'local'});
         if(req.method==='POST'&&url.pathname==='/api/session'){
           rate('login:'+ip,8,60000);const body=await readJson(req);if(code&&!equalSecret(body.code||'',code))throw new ProviderError('That access code did not match.',401);
           const {token}=sessions.issue();
           res.setHeader('Set-Cookie',`creature_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=86400${secure?'; Secure':''}`);return send(res,200,{ok:true});
         }
         if(!authorised)throw new ProviderError('Enter the access code to continue.',401);
+        const modelMatch=url.pathname.match(/^\/api\/generations\/([a-f0-9-]{36})\/model\.glb$/);
+        if(modelMatch&&req.method==='GET'){const job=jobs.owned(modelMatch[1],session.owner);if(job.status!=='complete')throw new ProviderError('This companion is not ready.',409);const data=await readFile(resolve(jobDir,job.id,'living.glb'));res.writeHead(200,{'Content-Type':'model/gltf-binary','Cache-Control':'private, no-store'});return res.end(data);}
         if(url.pathname.startsWith('/api/tripo/')||url.pathname.startsWith('/api/generations')){if(!providerAccess)throw new ProviderError('Set ACCESS_CODE on the server before sharing live AI access.',503);}
         if(req.method==='GET'&&url.pathname==='/api/tripo/balance'){rate('balance:'+session.owner,12,60000);return send(res,200,await jobs.balance());}
         if(req.method==='POST'&&url.pathname==='/api/design'){
@@ -66,9 +70,9 @@ export async function createApp({env=process.env,jev,fetchFn=fetch,development=f
           if(!providerAccess){if(requireJev)throw new ProviderError('Set ACCESS_CODE on the server before sharing live AI access.',503);return send(res,200,{...fallbackDecision(state),note:'Local behaviour · no AI request made'});}
           try{return send(res,200,await jev.decide(state));}catch(e){if(requireJev)throw e;return send(res,200,{...fallbackDecision(state),note:'Local fallback · Jev unavailable'});}
         }
-        if(req.method==='POST'&&url.pathname==='/api/generations') {rate('generation:'+session.owner,3,3600000);if(!jobs.available)throw new ProviderError('Image-to-3D is not connected.',503);return send(res,202,await jobs.start(validateBrief(await readJson(req)),session.owner));}
-        const match=url.pathname.match(/^\/api\/generations\/([a-f0-9-]{36})(\/approve)?$/);
-        if(match){if(req.method==='GET'&&!match[2])return send(res,200,await jobs.poll(match[1],session.owner));if(req.method==='POST'&&match[2]){await readJson(req);return send(res,200,await jobs.approve(match[1],session.owner));}}
+        if(req.method==='POST'&&url.pathname==='/api/generations') {rate('generation:'+session.owner,3,3600000);if(!jobs.available)throw new ProviderError('Image-to-3D is not connected.',503);if(!blender&&!finishFn)throw new ProviderError('Install Blender and set BLENDER_PATH before detailed creation. No credits were spent.',503);return send(res,202,await jobs.start(validateBrief(await readJson(req)),session.owner));}
+        const match=url.pathname.match(/^\/api\/generations\/([a-f0-9-]{36})(\/approve|\/finish)?$/);
+        if(match){if(req.method==='GET'&&!match[2])return send(res,200,await jobs.poll(match[1],session.owner));if(req.method==='POST'&&match[2]==='/finish'){await readJson(req);return send(res,202,await jobs.retryFinish(match[1],session.owner));}if(req.method==='POST'&&match[2]==='/approve'){await readJson(req);return send(res,200,await jobs.approve(match[1],session.owner));}}
         throw new ProviderError('This endpoint was not found.',404);
       }
       if(!['GET','HEAD'].includes(req.method)){res.writeHead(405);return res.end();}

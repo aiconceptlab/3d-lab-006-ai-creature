@@ -74,3 +74,12 @@ The open in-app browser was still executing a PLAY 001 bundle. Reloading loaded 
 - Extended the CPU audit to check source-axis alignment, pelvis motion, forward-only stance travel, cadence matching and deformed chin vertices. A navigation regression check covers 180-degree turns.
 - Production UI checks pass for all three pets, including yawn playback, held reactions, locomotion, framing and exact GLB downloads. No runtime exceptions.
 - Mouth controls are performed expressions, not speech lip-sync. Physical phone tracking is still unverified; camera-engine testing uses synthetic input.
+
+## Custom pipeline and animated turns — 2 October 2026
+
+- Main custom creation now requests a premium reference, pauses for approval, builds the detailed Tripo mesh/rig and runs local Blender finishing before completion. The procedural option is explicit; missing Blender blocks paid creation.
+- All three included assets now have 13 clips, including left/right stepping turns. The CPU audit checks all four paws through turn loops and bounded blended transitions; navigation turns before translating. Camera movement no longer drives stationary body yaw, in studio or room mode.
+- 39 unit/security checks pass, including private finished downloads, local retry/restart recovery without provider calls, and camera-independent heading.
+- The full production custom workflow passed using actual Blender and an original source GLB with its reviewed mesh identity removed. It created all 13 clips, used the automatic chin estimator, flagged facial review, loaded the finished private asset, animated turning paws, preserved heading during camera orbit, downloaded the GLB and restored the saved pet after reload. Vendor replies were mocked with an existing GLB: zero paid requests. This checks plumbing and generic authoring, not the artistic quality of a newly generated reference/mesh.
+- Production browser checks pass for Nova, Mochi and Ember; desktop, iPhone/Pixel layouts and the actual room engine with synthetic camera input pass. Physical phone tracking remains unverified.
+- New faces receive conservative jaw morphs; a precise lip opening/lining still needs reviewed per-character landmarks. The pipeline cannot guarantee that every generated mesh matches a curated sample or fix all unusual rigs. Existing procedural designs need a new detailed generation; they are not silently regenerated at a cost.

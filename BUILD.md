@@ -46,7 +46,7 @@ To inspect your own generated mesh:
 & 'C:/path/to/blender.exe' --background --python scripts/inspect-nova.py -- public/models/nova-living.glb artifacts/nova-inspection
 ```
 
-The script writes four renders, a geometry report and an editable inspection .blend file. You can also use Blender's File → Import → glTF 2.0 to inspect or refine the included assets manually. To bake animations onto an original Tripo GLB, follow [docs/ANIMATION.md](docs/ANIMATION.md). Custom local demos are built directly in Three.js; arbitrary new Tripo models retain their vendor walk until reviewed and baked separately.
+The script writes four renders, a geometry report and an editable inspection .blend file. You can also use Blender's File → Import → glTF 2.0 to inspect or refine the included assets manually. To bake animations onto an original Tripo GLB, follow [docs/ANIMATION.md](docs/ANIMATION.md). Custom local demos are built directly in Three.js. Detailed custom creation now requires Blender 4.5 LTS or newer on the Node server. Set BLENDER_PATH to its executable, restart and confirm the custom creation panel is enabled. The server downloads the original vendor walk privately and runs the same authoring scripts before offering a completed pet; it does not serve raw walking-only results. No Blender MCP connection is required: the server invokes Blender’s official Python interface directly. Only deploy this creation workflow on a host with Blender installed (not a static-only host).
 
 ## Updating the app
 

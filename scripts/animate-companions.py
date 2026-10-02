@@ -12,7 +12,9 @@ spec = importlib.util.spec_from_file_location("facial_rig", Path(__file__).with_
 facial = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(facial)
 
-source, destination, report_path = map(Path, sys.argv[sys.argv.index("--") + 1:])
+arguments = sys.argv[sys.argv.index("--") + 1:]
+source, destination, report_path = map(Path, arguments[:3])
+if "--auto-face" in arguments:facial.PROFILES.clear()
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=str(source.resolve()))
 scene = bpy.context.scene
@@ -158,11 +160,13 @@ fps = 30
 scene.render.fps = fps
 clips = [("Idle", 4, 0), ("Walk", 1.6, .26), ("Trot", .85, .65), ("Look", 4, 0), ("Rest", 5, 0),
          ("Curious", 5, 0), ("Playful", 4, 0), ("Shy", 5, 0), ("Sleepy", 6, 0),
-         ("Greet", 4, 0), ("Stretch", 5, 0)]
+         ("Greet", 4, 0), ("Stretch", 5, 0), ("TurnLeft", .8, 0), ("TurnRight", .8, 0)]
 common_stride = min(sum(leg["lengths"]) for leg in legs.values()) * .40
 reports = []
 actions = []
 for clip_name, duration, speed in clips:
+    turning = clip_name.startswith("Turn")
+    turn_sign = 1 if clip_name == "TurnLeft" else -1
     frames = round(duration * fps)
     action = bpy.data.actions.new(clip_name)
     arm.animation_data_create()
@@ -193,7 +197,11 @@ for clip_name, duration, speed in clips:
         pelvis_roll = (.055 if clip_name == "Walk" else .035) * math.sin(angle) if speed else 0
         pelvis_pitch = .035 * math.cos(angle * 2) if speed else 0
         pelvis_yaw = .025 * math.sin(angle) if speed else 0
-        if speed:
+        if turning:
+            pelvis_roll = .045 * math.sin(angle)
+            pelvis_pitch = .020 * math.cos(angle * 2)
+            pelvis_yaw = .020 * turn_sign * math.sin(angle)
+        if speed or turning:
             rotation = Quaternion(up, pelvis_yaw) @ Quaternion(side, pelvis_pitch) @ Quaternion(forward, pelvis_roll)
             root_matrix = Matrix.Translation(root_matrix.translation) @ (rotation @ rest_matrices[root_name].to_quaternion()).to_matrix().to_4x4()
             root_matrix.translation += side * .004 * math.sin(angle) + up * .006 * (1 - math.cos(angle * 2))
@@ -225,10 +233,14 @@ for clip_name, duration, speed in clips:
             roll = .18 * envelope
         elif clip_name == "Stretch":
             pitch = .16 * envelope
+        if turning:
+            yaw += .18 * turn_sign * math.sin(math.pi * cycle)**2
+            roll -= pelvis_roll * .5
         if speed:
             # Generated heads look sideways in their neutral poses. Face the
             # anatomical body axis when travelling, with a stable gaze.
-            yaw += math.atan2(forward.y, forward.x)
+            face_direction = Vector(facial_report.get("faceForward", [1,0,0]))
+            yaw += math.atan2(forward.y, forward.x)-math.atan2(face_direction.y,face_direction.x)
             pitch -= pelvis_pitch * .65
             roll -= pelvis_roll * .50
         anatomical_rotate("tripo::Head_1", yaw=yaw * .45, pitch=pitch * .45, roll=roll*.35)
@@ -262,6 +274,20 @@ for clip_name, duration, speed in clips:
                     smooth = progress - math.sin(2 * math.pi * progress) / (2 * math.pi)
                     target += forward * stride * (smooth - .5)
                     target.z += (.025 if clip_name == "Walk" else .045) * math.sin(math.pi * progress) ** 2
+            if turning:
+                # In-place pivot: planted paws counter-rotate as the body turns;
+                # alternating paws lift and replant on a smooth circular swing.
+                phase = (cycle + {"0_Left":0,"1_Right":.25,"0_Right":.5,"1_Left":.75}[key]) % 1
+                duty = .62
+                if phase < duty:
+                    a = turn_sign * .65 * duration * (.5*duty - phase)
+                else:
+                    p = (phase-duty)/(1-duty)
+                    smooth = p-math.sin(2*math.pi*p)/(2*math.pi)
+                    a = turn_sign * .65 * duration * duty * (smooth-.5)
+                    target += up * .035 * math.sin(math.pi*p)**2
+                centre = sum((l["ankle"] for l in legs.values()), Vector())/4;centre.z=target.z
+                target = centre + Quaternion(up,a) @ (target-centre)
             actual = leg_pose(leg, target)
             positions[key].append(list(actual))
             if not speed:
@@ -310,8 +336,8 @@ scene.frame_end = 151
 bpy.ops.export_scene.gltf(filepath=str(destination.resolve()), export_format="GLB", use_selection=True,
     export_animation_mode="NLA_TRACKS", export_force_sampling=True, export_frame_range=False,
     export_anim_slide_to_zero=True, export_skins=True, export_yup=True, export_extras=True)
-report = {"source": source.name, "blender": bpy.app.version_string, "repairedRearLeg": repaired, "joints": len(bones), "facialRig": facial_report, "forwardRig": list(forward), "strideRigUnits": common_stride, "clips": reports}
+report = {"source": source.name, "blender": bpy.app.version_string, "repairedRearLeg": repaired, "joints": len(bones), "facialRig": facial_report, "forwardRig": list(forward), "strideRigUnits": common_stride, "turnRadiansPerSecond": .65, "clips": reports}
 report_path.parent.mkdir(parents=True, exist_ok=True)
 report_path.write_text(json.dumps(report, indent=2))
-bpy.ops.wm.save_as_mainfile(filepath=str(report_path.with_suffix(".blend").resolve()))
+if "--no-blend" not in arguments:bpy.ops.wm.save_as_mainfile(filepath=str(report_path.with_suffix(".blend").resolve()))
 print(json.dumps(report))

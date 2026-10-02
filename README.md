@@ -22,7 +22,9 @@ On Windows use `Copy-Item .env.example .env` instead of `cp`. Open http://127.0.
 ## What works
 
 - Fox, cat and bunny companions: coat, eyes, luminous accents, ears, tail, body build and personality.
-- Detailed Nova, Mochi and Ember: separate textured, rigged assets with eleven Blender-authored clips with pelvis/chest weight shifts, head reactions and animated jaws. Each model runs in the preview and room camera with independent animation state. See [asset details](docs/COMPANION-ASSETS.md) and [animation workflow](docs/ANIMATION.md).
+- Detailed Nova, Mochi and Ember: separate textured, rigged assets with thirteen Blender-authored clips with pelvis/chest weight shifts, head reactions and animated jaws. Each model runs in the preview and room camera with independent animation state. See [asset details](docs/COMPANION-ASSETS.md) and [animation workflow](docs/ANIMATION.md).
+- Custom detailed creation uses a premium character reference, approval before the paid 3D build, detailed PBR mesh and a local Blender pass with the full 13-clip animation set. New faces receive conservative jaw morphs flagged for visual review.
+- Camera orbit never steers a stationary pet. Navigation uses animated left/right pivot steps; Follow explicitly follows the phone.
 - Jev interprets a description into eight validated choices. Trusted geometry creates and animates the result. Without a key, deterministic local rules are explicitly labelled.
 - Included pets use a four-beat walk, diagonal trot, idle breathing, curious head turns and a calmer standing rest, with blended transitions and speed-matched cadence. All four paws deform and move. Simple procedural designs also blink; generated meshes currently have no facial blink rig. All pets support virtual fetch, phone following, simulated energy and manually marked obstacle zones.
 - Curious, playful, shy and sleepy body language; greeting paw, affection and stretch reactions. Complete reactions are held before the next AI decision, in the preview and room.
@@ -55,7 +57,7 @@ The pet occupies a small virtual play area around the placement point. Mark excl
 
 ## Optional image-to-3D experiment
 
-The included Nova, Mochi and Ember need no Tripo account or credits to play. Connect a Tripo developer API key to create another reference, approve it, then request a detailed mesh, quadruped rig check, rig and walking clip. Generated compatible rigs can enter room mode. Nova's complete live pipeline was checked on 1 October 2026 and consumed 75 API credits in one pass. Other generated creatures still require visual review; one good Nova is not a guarantee of quality for every prompt. See [docs/TRIPO.md](docs/TRIPO.md) and [Nova provenance](docs/NOVA-ASSET.md).
+The included Nova, Mochi and Ember need no Tripo account or credits to play. Connect a Tripo developer API key and install Blender 4.5 LTS or newer. Set `BLENDER_PATH` in `.env` and restart. Create my companion starts a premium character reference for a new description; approve it before mesh generation, quadruped rigging and the local animation finishing pass. Included sample descriptions reuse their models without paid generation. Finished compatible rigs can enter room mode; raw vendor walks are not offered as completed companions. Missing Blender blocks paid creation. Local finishing failures can be retried without provider credits. The original and finished GLBs are saved privately in DATA_DIR and finished assets require the owning session. Nova's complete live pipeline was checked on 1 October 2026 and consumed 75 API credits in one pass. Other generated creatures still require visual review; one good Nova is not a guarantee of quality for every prompt. See [docs/TRIPO.md](docs/TRIPO.md) and [Nova provenance](docs/NOVA-ASSET.md).
 
 ## Check it
 

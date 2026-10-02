@@ -49,7 +49,7 @@ for(const name of ['nova','mochi','ember']){
     if(['Sleepy','Playful','Greet'].includes(clip.name))assert.ok(jawRange>.3,name+' '+clip.name+' mouth is frozen');
     const paws={};for(const leg of legs){const points=paths[leg],excursion=Math.max(...points.map(p=>p.distanceTo(points[0]))),loopError=points[0].distanceTo(points.at(-1));
       assert.ok(loopError<.001,name+' '+clip.name+' '+leg+' loop seam '+loopError);
-      if(['Walk','Trot'].includes(clip.name))assert.ok(excursion>.012,name+' '+clip.name+' '+leg+' is frozen '+excursion);
+      if(['Walk','Trot','TurnLeft','TurnRight'].includes(clip.name))assert.ok(excursion>.012,name+' '+clip.name+' '+leg+' is frozen '+excursion);
       else if(!(['Greet'].includes(clip.name)&&leg==='0_Left')&&!(clip.name==='Stretch'&&leg.startsWith('0_')))assert.ok(excursion<.002,name+' '+clip.name+' '+leg+' floats at rest '+excursion);
       paws[leg]={weightedVertices:samples[leg].length,excursion,loopError};
     }
@@ -59,10 +59,10 @@ for(const name of ['nova','mochi','ember']){
   pet.dispose();
   const runtime=createImportedCreature(asset);
   const runtimeBones=[];runtime.character.traverse(o=>{if(o.isBone)runtimeBones.push(o);});
-  for(const [behaviour,speed,expected,expression] of [['idle',0,'Idle'],['follow',.1,'Walk'],['chase',.20,'Trot'],['look',0,'Look'],['rest',0,'Rest'],...['Curious','Playful','Shy','Sleepy','Greet','Stretch'].map(clip=>['look',0,clip,clip])]){
+  for(const [behaviour,speed,expected,expression,angularSpeed=0] of [['idle',0,'Idle'],['follow',.1,'Walk'],['chase',.20,'Trot'],['look',0,'Look'],['rest',0,'Rest'],['explore',0,'TurnLeft',null,.65],['explore',0,'TurnRight',null,-.65],...['Curious','Playful','Shy','Sleepy','Greet','Stretch'].map(clip=>['look',0,clip,clip])]){
     let maximumFrameTurn=0,maximumBone=null;
     for(let i=0;i<120;i++){
-      const before=runtimeBones.map(b=>b.quaternion.clone());runtime.animate(1/60,speed,behaviour,expression);
+      const before=runtimeBones.map(b=>b.quaternion.clone());runtime.animate(1/60,speed,behaviour,expression,null,angularSpeed);
       for(const [j,b] of runtimeBones.entries()){const angle=b.quaternion.angleTo(before[j]);if(angle>maximumFrameTurn){maximumFrameTurn=angle;maximumBone=b.name;}}
     }
     const state=runtime.animationState();assert.equal(state.clip,expected);assert.ok(state.cadence>0&&state.cadence<4);

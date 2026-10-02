@@ -9,9 +9,45 @@ PROFILES={
  '04b10f30':(.390,-.125,-.068,.030,.026),
  '74629b50':(.469,.014,.080,.032,.026),
 }
+def automatic_chin(arm,meshes):
+ # New creatures receive a conservative, bone-weighted jaw deformation.
+ # A guessed mouth opening can cut through eyes/fur, so no lining is added
+ # until facial landmarks have been reviewed in Blender.
+ face=arm.data.bones['tripo::Head_2'];up=Vector((0,0,1))
+ forward=face.head_local-arm.data.bones['tripo::Head_1'].head_local;forward.z=0
+ if forward.length<.001:raise RuntimeError('Cannot locate the face direction')
+ forward.normalize();side=up.cross(forward).normalized();points=[]
+ for mesh in meshes:
+  transform=arm.matrix_world.inverted()@mesh.matrix_world;group=mesh.vertex_groups.get(face.name)
+  if not group:continue
+  for v in mesh.data.vertices:
+   weight=sum(g.weight for g in v.groups if g.group==group.index)
+   if weight>.7:points.append(transform@v.co)
+ if len(points)<100:raise RuntimeError('Insufficient weighted face geometry')
+ def quantile(values,q):
+  values=sorted(values);return values[round((len(values)-1)*q)]
+ extent=quantile([p.dot(side) for p in points],.9)-quantile([p.dot(side) for p in points],.1)
+ width=extent*.20;opening=extent*.08;depth=quantile([p.dot(forward) for p in points],.94)
+ centre=quantile([p.dot(side) for p in points],.5);lip=face.head_local.z
+ changed=0
+ for mesh in meshes:
+  transform=arm.matrix_world.inverted()@mesh.matrix_world;inverse=transform.inverted();group=mesh.vertex_groups.get(face.name)
+  mesh.shape_key_add(name='Basis');jaw=mesh.shape_key_add(name='JawOpen');smile=mesh.shape_key_add(name='Smile')
+  for v in mesh.data.vertices:
+   p=transform@v.co;weight=sum(g.weight for g in v.groups if g.group==group.index) if group else 0
+   lateral=max(0,1-((p.dot(side)-centre)/max(width*2,.001))**2)
+   front=max(0,min(1,(p.dot(forward)-(depth-extent*.35))/max(extent*.25,.001)))
+   lower=max(0,min(1,(lip+extent*.03-p.z)/max(extent*.12,.001)))*max(0,min(1,(p.z-(lip-extent*.5))/max(extent*.2,.001)))
+   influence=weight*lateral*front*lower
+   if influence>.01:changed+=1
+   jaw.data[v.index].co=inverse@(p-up*opening*influence-forward*opening*.1*influence)
+   smile.data[v.index].co=inverse@(p+up*opening*.1*influence)
+ if changed<25:raise RuntimeError('Face calibration needs manual review')
+ return {'calibration':'estimated-chin','reviewRequired':True,'deformedChinVertices':changed,'mouthLiningVertices':0,'faceForward':list(forward),'opening':opening}
+
 def author_mouth(arm,meshes):
  source=meshes[0];profile=next((v for k,v in PROFILES.items() if k in source.name),None)
- if profile is None:raise RuntimeError('This character needs reviewed mouth landmarks in facial-rig.py')
+ if profile is None:return automatic_chin(arm,meshes)
  x,y,z,width,opening=profile;face=arm.data.bones['tripo::Head_2'];changed=0
  for mesh in list(meshes):
   transform=arm.matrix_world.inverted()@mesh.matrix_world;inverse=transform.inverted();mesh.shape_key_add(name='Basis');jaw=mesh.shape_key_add(name='JawOpen');smile=mesh.shape_key_add(name='Smile');vg=mesh.vertex_groups.get(face.name)

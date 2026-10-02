@@ -29,7 +29,7 @@ try{
     await page.locator('#rest-button').click();
     const asset=await page.evaluate(()=>window.creatureLab.snapshot().asset),idle=await page.evaluate(()=>window.creatureLab.pose());
     assert.equal(asset.generated,true);assert.ok(asset.triangles>20000&&asset.triangles<=100000);
-    assert.deepEqual([...asset.clips].sort(),['Curious','Greet','Idle','Look','Playful','Rest','Shy','Sleepy','Stretch','Trot','Walk']);assert.ok(idle.length>=20);
+    assert.deepEqual([...asset.clips].sort(),['Curious','Greet','Idle','Look','Playful','Rest','Shy','Sleepy','Stretch','Trot','TurnLeft','TurnRight','Walk']);assert.ok(idle.length>=20);
     await page.locator('#viewport').screenshot({path:'artifacts/'+name.toLowerCase()+'-generated-preview.png'});
     // A known far target makes movement/framing checks independent of idle randomness.
     await page.evaluate(()=>{const original=Math.random;let calls=0;Math.random=()=>{if(++calls<=2)return .9;Math.random=original;return original();};});
@@ -52,10 +52,10 @@ try{
   await page.locator('#demo-button').click();await page.waitForFunction(()=>window.creatureLab.snapshot().pet.source==='local'&&window.creatureLab.snapshot().external);
   await page.evaluate(()=>{const pets=JSON.parse(localStorage.getItem('creature-pets'));for(const p of pets)if(p.name==='Mochi')p.modelUrl='/models/mochi.glb';localStorage.setItem('creature-pets',JSON.stringify(pets));});
   await page.reload();await page.locator('.saved-card').filter({hasText:'Mochi'}).click();await page.waitForFunction(()=>window.creatureLab.snapshot().external);
-  assert.equal((await page.evaluate(()=>window.creatureLab.snapshot())).pet.modelUrl,'/models/mochi-living.glb?v=living-2');
+  assert.equal((await page.evaluate(()=>window.creatureLab.snapshot())).pet.modelUrl,'/models/mochi-living.glb?v=living-3');
   await page.route('**/api/design',async route=>{const request=route.request().postDataJSON();await route.fulfill({json:{...request,design:{...((await import('../shared/design.mjs')).PRESETS[1].design),ears:'large'},source:'jev',note:'Fixture Jev interpretation'}});});
   await page.locator('[data-preset="Mochi"]').click();await page.locator('#create-button').click();await page.waitForFunction(()=>window.creatureLab.snapshot().pet.source==='jev'&&window.creatureLab.snapshot().external);
-  assert.equal((await page.evaluate(()=>window.creatureLab.snapshot())).pet.modelUrl,'/models/mochi-living.glb?v=living-2');
+  assert.equal((await page.evaluate(()=>window.creatureLab.snapshot())).pet.modelUrl,'/models/mochi-living.glb?v=living-3');
   assert.deepEqual(errors,[]);
   const result={pets:results,proceduralCustomDesign:true,savedMochiUsesGeneratedModel:true,jevReinterpretationPreservesModel:true,reload:true,errors,physicalAR:false};
   await writeFile('artifacts/generated-check.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result));

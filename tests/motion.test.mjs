@@ -18,9 +18,9 @@ test('idle companions vary their poses, and tracking loss freezes a held reactio
 });
 
 test('long exploration pauses to emote; a user ball command still takes priority',()=>{
-  const pet=new PetMotion({random:()=>.95});pet.lifeTime=12;pet.setAction('explore');pet.update(.05);
+  const pet=new PetMotion({random:()=>.95});pet.lifeTime=12;pet.setAction('explore');for(let i=0;i<20&&!pet.expression;i++)pet.update(.05);
   assert.equal(pet.expression,'Curious');assert.equal(pet.speed,0);assert.equal(pet.action,'look');
-  pet.setBall({x:-1,z:0});pet.update(.05);assert.equal(pet.action,'chase');assert.equal(pet.expression,null);assert.ok(pet.speed>0);
+  pet.setBall({x:-1,z:0});for(let i=0;i<20;i++)pet.update(.05);assert.equal(pet.action,'chase');assert.equal(pet.expression,null);assert.ok(pet.speed>0);
 });
 
 test('route skirts a blocking zone; every segment and arrival stay safe',()=>{
@@ -59,4 +59,9 @@ test('manual actions advance the epoch; exclusions cannot cover the pet',()=>{
   const pet=new PetMotion(),epoch=pet.requestEpoch;assert.equal(pet.addObstacle({x:0,z:0,w:.4,d:.4}),false);
   pet.setBall({x:.8,z:.6});assert.ok(pet.requestEpoch>epoch);
   assert.ok(pet.addObstacle({x:.8,z:.6,w:.4,d:.4}));assert.equal(pet.ball,null);
+});
+
+test('sharp direction changes turn before travelling and never strafe',()=>{
+ const pet=new PetMotion();pet.setBall({x:0,z:-1});const start={...pet.position};pet.update(.05);assert.deepEqual(pet.position,start);
+ let travelled=0;for(let i=0;i<160;i++){const before={...pet.position};pet.update(.05);const dx=pet.position.x-before.x,dz=pet.position.z-before.z;if(Math.hypot(dx,dz)>.00001){const heading=Math.atan2(dx,dz),error=Math.atan2(Math.sin(heading-pet.yaw),Math.cos(heading-pet.yaw));assert.ok(Math.abs(error)<.35);travelled+=Math.hypot(dx,dz);}}assert.ok(travelled>.8);
 });

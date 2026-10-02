@@ -1,6 +1,6 @@
 # Nova asset preparation
 
-Status: generated, rigged, animated, inspected in Blender and connected to the website on 1 October 2026. The current Nova uses `public/models/nova-living.glb` in both the studio and room view, with five Blender-authored animations. Mochi and Ember use their own detailed assets; custom locally designed shapes remain procedural. The generation statistics below describe the original vendor output; see [all included companions](COMPANION-ASSETS.md) and [the subsequent animation work](ANIMATION.md).
+Status: generated, rigged, animated, inspected in Blender and connected to the website on 1 October 2026. The current Nova uses `public/models/nova-living.glb` in both the studio and room view, with eleven Blender-authored body and facial animations. Mochi and Ember use their own detailed assets; custom locally designed shapes remain procedural. The generation statistics below describe the original vendor output; see [all included companions](COMPANION-ASSETS.md) and [the subsequent animation work](ANIMATION.md).
 
 Reference: `public/nova-reference.png`.
 

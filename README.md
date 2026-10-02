@@ -22,7 +22,7 @@ On Windows use `Copy-Item .env.example .env` instead of `cp`. Open http://127.0.
 ## What works
 
 - Fox, cat and bunny companions: coat, eyes, luminous accents, ears, tail, body build and personality.
-- Detailed Nova, Mochi and Ember: separate textured, rigged assets with eleven Blender-authored clips. Each model runs in the preview and room camera with independent animation state. See [asset details](docs/COMPANION-ASSETS.md) and [animation workflow](docs/ANIMATION.md).
+- Detailed Nova, Mochi and Ember: separate textured, rigged assets with eleven Blender-authored clips with pelvis/chest weight shifts, head reactions and animated jaws. Each model runs in the preview and room camera with independent animation state. See [asset details](docs/COMPANION-ASSETS.md) and [animation workflow](docs/ANIMATION.md).
 - Jev interprets a description into eight validated choices. Trusted geometry creates and animates the result. Without a key, deterministic local rules are explicitly labelled.
 - Included pets use a four-beat walk, diagonal trot, idle breathing, curious head turns and a calmer standing rest, with blended transitions and speed-matched cadence. All four paws deform and move. Simple procedural designs also blink; generated meshes currently have no facial blink rig. All pets support virtual fetch, phone following, simulated energy and manually marked obstacle zones.
 - Curious, playful, shy and sleepy body language; greeting paw, affection and stretch reactions. Complete reactions are held before the next AI decision, in the preview and room.

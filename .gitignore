@@ -13,3 +13,6 @@ artifacts/
 
 public/vision/wasm/
 public/vision/vision_bundle.js
+
+__pycache__/
+*.pyc

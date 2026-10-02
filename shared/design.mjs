@@ -15,9 +15,9 @@ export const palette = {
 };
 export const NOVA = Object.freeze({family: 'fox', coat: 'cream', accent: 'cyan', eyes: 'blue', ears: 'large', tail: 'curled', build: 'round', personality: 'curious'});
 export const PRESETS = [
-  {name: 'Nova', modelUrl: '/models/nova-living.glb?v=expressions-1', description: 'A tiny cream fox-cat with huge ears, blue eyes, glowing cyan paws and a curled tail. Curious and friendly.', design: {...NOVA}},
-  {name: 'Mochi', modelUrl: '/models/mochi-living.glb?v=expressions-1', description: 'A round lilac bunny with long ears, violet eyes, a little puff tail and mint paws. Sleepy and cuddly.', design: {...NOVA, family: 'bunny', coat: 'lilac', accent: 'mint', eyes: 'violet', ears: 'long', tail: 'puff', personality: 'sleepy'}},
-  {name: 'Ember', modelUrl: '/models/ember-living.glb?v=expressions-1', description: 'A slender charcoal cat with small ears, amber eyes, a fluffy tail and warm amber paws. Playful and energetic.', design: {...NOVA, family: 'cat', coat: 'charcoal', accent: 'amber', eyes: 'amber', ears: 'small', tail: 'fluffy', build: 'slender', personality: 'playful'}},
+  {name: 'Nova', modelUrl: '/models/nova-living.glb?v=living-2', description: 'A tiny cream fox-cat with huge ears, blue eyes, glowing cyan paws and a curled tail. Curious and friendly.', design: {...NOVA}},
+  {name: 'Mochi', modelUrl: '/models/mochi-living.glb?v=living-2', description: 'A round lilac bunny with long ears, violet eyes, a little puff tail and mint paws. Sleepy and cuddly.', design: {...NOVA, family: 'bunny', coat: 'lilac', accent: 'mint', eyes: 'violet', ears: 'long', tail: 'puff', personality: 'sleepy'}},
+  {name: 'Ember', modelUrl: '/models/ember-living.glb?v=living-2', description: 'A slender charcoal cat with small ears, amber eyes, a fluffy tail and warm amber paws. Playful and energetic.', design: {...NOVA, family: 'cat', coat: 'charcoal', accent: 'amber', eyes: 'amber', ears: 'small', tail: 'fluffy', build: 'slender', personality: 'playful'}},
 ];
 export function includedModel(design,description='') {
   const normalise=text=>text.trim().toLowerCase().replace(/\s+/g,' ');
@@ -59,5 +59,5 @@ export function localDesign(description) {
 // Upgrade saved bundled URLs; custom generation URLs remain unchanged.
 export function currentModelUrl(url) {
   const match=typeof url==='string'&&url.match(/^\/models\/(nova|mochi|ember)(?:-living)?\.glb(?:\?.*)?$/);
-  return match?'/models/'+match[1]+'-living.glb?v=expressions-1':url;
+  return match?'/models/'+match[1]+'-living.glb?v=living-2':url;
 }

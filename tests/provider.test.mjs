@@ -35,8 +35,8 @@ test('independent Jev AI keys reach their own endpoint and never follow redirect
 });
 test('reinterpreting an included sample preserves its detailed asset while custom briefs stay separate',()=>{
   const sample=PRESETS[1];
-  assert.equal(includedModel({...sample.design,ears:'large'},sample.description),'/models/mochi-living.glb?v=expressions-1');
-  assert.equal(includedModel(PRESETS[2].design),'/models/ember-living.glb?v=expressions-1');
+  assert.equal(includedModel({...sample.design,ears:'large'},sample.description),'/models/mochi-living.glb?v=living-2');
+  assert.equal(includedModel(PRESETS[2].design),'/models/ember-living.glb?v=living-2');
   assert.equal(includedModel({...sample.design,coat:'moss'},'A moss bunny with short ears.'),undefined);
 });
 test('design changes affect geometry and every preset has animated limbs',()=>{

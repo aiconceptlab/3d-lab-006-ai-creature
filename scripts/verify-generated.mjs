@@ -23,6 +23,7 @@ try{
       await page.waitForFunction(before=>window.creatureLab.pose().find(b=>b.name.endsWith('Head_2')).q.some((q,i)=>Math.abs(q-before[i])>.025),before,{timeout:3000});
       assert.equal((await page.evaluate(()=>window.creatureLab.snapshot())).expression,clip);
       assert.ok((await page.evaluate(()=>window.creatureLab.snapshot())).expressionRemaining>0,clip+' must survive the next AI decision');
+      if(clip==='Sleepy'){await page.waitForFunction(()=>window.creatureLab.snapshot().asset.animation.mouth.jaw>.55,null,{timeout:6000});await page.locator('#viewport').screenshot({path:'artifacts/'+name.toLowerCase()+'-yawn-ui.png'});}
       if(clip==='Greet')await page.locator('#viewport').screenshot({path:'artifacts/'+name.toLowerCase()+'-greeting-ui.png'});
     }
     await page.locator('#rest-button').click();
@@ -51,10 +52,10 @@ try{
   await page.locator('#demo-button').click();await page.waitForFunction(()=>window.creatureLab.snapshot().pet.source==='local'&&window.creatureLab.snapshot().external);
   await page.evaluate(()=>{const pets=JSON.parse(localStorage.getItem('creature-pets'));for(const p of pets)if(p.name==='Mochi')p.modelUrl='/models/mochi.glb';localStorage.setItem('creature-pets',JSON.stringify(pets));});
   await page.reload();await page.locator('.saved-card').filter({hasText:'Mochi'}).click();await page.waitForFunction(()=>window.creatureLab.snapshot().external);
-  assert.equal((await page.evaluate(()=>window.creatureLab.snapshot())).pet.modelUrl,'/models/mochi-living.glb?v=expressions-1');
+  assert.equal((await page.evaluate(()=>window.creatureLab.snapshot())).pet.modelUrl,'/models/mochi-living.glb?v=living-2');
   await page.route('**/api/design',async route=>{const request=route.request().postDataJSON();await route.fulfill({json:{...request,design:{...((await import('../shared/design.mjs')).PRESETS[1].design),ears:'large'},source:'jev',note:'Fixture Jev interpretation'}});});
   await page.locator('[data-preset="Mochi"]').click();await page.locator('#create-button').click();await page.waitForFunction(()=>window.creatureLab.snapshot().pet.source==='jev'&&window.creatureLab.snapshot().external);
-  assert.equal((await page.evaluate(()=>window.creatureLab.snapshot())).pet.modelUrl,'/models/mochi-living.glb?v=expressions-1');
+  assert.equal((await page.evaluate(()=>window.creatureLab.snapshot())).pet.modelUrl,'/models/mochi-living.glb?v=living-2');
   assert.deepEqual(errors,[]);
   const result={pets:results,proceduralCustomDesign:true,savedMochiUsesGeneratedModel:true,jevReinterpretationPreservesModel:true,reload:true,errors,physicalAR:false};
   await writeFile('artifacts/generated-check.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result));

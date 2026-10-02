@@ -15,7 +15,7 @@ export async function loadCreatureAsset(url){
   if(!cache.has(url))cache.set(url,new GLTFLoader().loadAsync(url).then(prepareTextures).catch(error=>{cache.delete(url);throw error;}));
   return cache.get(url);
 }
-export function createImportedCreature(asset,{height=.55,yaw=-Math.PI/2}={}){
+export function createImportedCreature(asset,{height=.55,yaw}={}){
   let triangles=0,skinned=false;asset.scene.traverse(o=>{if(o.isSkinnedMesh)skinned=true;if(o.geometry)triangles+=(o.geometry.index?.count||o.geometry.attributes.position.count)/3;});
   if(!asset.animations.length||!skinned)throw new Error('The pet needs a skinned mesh and a walking animation.');
   if(triangles>100000)throw new Error('The pet exceeds the mobile triangle budget.');
@@ -25,7 +25,12 @@ export function createImportedCreature(asset,{height=.55,yaw=-Math.PI/2}={}){
       if(!rigBones.some(b=>b.name.endsWith(leg+'_Limb_'+joint)))throw new Error('This companion has an incomplete leg rig. Repair it in Blender before using it.');
     }
   }
-  const group=new THREE.Group();group.name='GeneratedCompanion';const character=clone(asset.scene),pivot=new THREE.Group();pivot.rotation.y=yaw;pivot.add(character);group.add(pivot);
+  const group=new THREE.Group();group.name='GeneratedCompanion';const character=clone(asset.scene),pivot=new THREE.Group();
+  character.updateMatrixWorld(true);
+  const spine=rigBones.filter(b=>/Spine_\d+$/.test(b.name)).sort((a,b)=>Number(a.name.match(/\d+$/)[0])-Number(b.name.match(/\d+$/)[0]));
+  const sourceForward=spine.length>1?spine.at(-1).getWorldPosition(new THREE.Vector3()).sub(spine[0].getWorldPosition(new THREE.Vector3())):new THREE.Vector3(1,0,0);
+  sourceForward.y=0;sourceForward.normalize();
+  pivot.rotation.y=yaw??-Math.atan2(sourceForward.x,sourceForward.z);pivot.add(character);group.add(pivot);
   // Each runtime owns its geometry/materials and skeleton. Texture data is shared
   // by the immutable cached asset and never disposed by an individual session.
   character.traverse(o=>{if(!o.isMesh)return;o.geometry=o.geometry.clone();o.material=Array.isArray(o.material)?o.material.map(m=>m.clone()):o.material.clone();o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;});
@@ -48,12 +53,13 @@ export function createImportedCreature(asset,{height=.55,yaw=-Math.PI/2}={}){
       a.reset().play();a.time=duration*.07;mixer.update(0);group.updateMatrixWorld(true);
       const before=paw[0].getWorldPosition(new THREE.Vector3());
       a.time+=dt;mixer.update(0);group.updateMatrixWorld(true);
-      const rate=paw[0].getWorldPosition(new THREE.Vector3()).distanceTo(before)/dt;
+      const rate=Math.abs(paw[0].getWorldPosition(new THREE.Vector3()).z-before.z)/dt;
       if(Number.isFinite(rate)&&rate>.001)nominal[name]=rate;
       a.stop();
     }
   }
   let current=null,disposed=false,lastExpressionEpoch=null;
+  let faceMesh=null;character.traverse(o=>{if(o.isMesh&&o.geometry.attributes.position.count>1000&&o.morphTargetDictionary?.JawOpen!==undefined)faceMesh=o;});
   const activate=name=>{
     if(current===name)return;
     const previous=actions[current],next=actions[name];
@@ -81,7 +87,7 @@ export function createImportedCreature(asset,{height=.55,yaw=-Math.PI/2}={}){
       }
       mixer.update(dt);
     },
-    animationState:()=>({clip:current,cadence:actions[current]?.getEffectiveTimeScale(),nominalSpeeds:{...nominal}}),
+    animationState:()=>({clip:current,cadence:actions[current]?.getEffectiveTimeScale(),nominalSpeeds:{...nominal},mouth:faceMesh?{jaw:faceMesh.morphTargetInfluences[faceMesh.morphTargetDictionary.JawOpen],smile:faceMesh.morphTargetInfluences[faceMesh.morphTargetDictionary.Smile]}:null}),
     clips:()=>asset.animations,
     dispose(){if(disposed)return;disposed=true;mixer.stopAllAction();mixer.uncacheRoot(character);character.traverse(o=>{o.geometry?.dispose();if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());});}
   };

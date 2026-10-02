@@ -65,4 +65,12 @@ The open in-app browser was still executing a PLAY 001 bundle. Reloading loaded 
 - The distributed room engine loads all three expressive pets with synthetic camera input. Hello selects Greet in the room mixer and the room head changes pose. Exit stops every camera track. Physical mobile tracking remains unverified.
 - Desktop, iPhone and Pixel responsive checks pass. Close three-quarter pose frames and a recording of all six expressive animations were visually reviewed.
 - 34 unit/contract/security checks pass, including reaction priority, stale-decision invalidation, autonomous variation, tracking pause and exploration breaks.
-- Expressions are authored body language. Eyelids and mouth shapes remain static; no facial emotions or eye closure are claimed.
+- Expressions are authored body language. At that release eyelids and mouth shapes remained static; the subsequent jaw update below supersedes the mouth limitation. Eye closure is still unsupported.
+
+## Torso, heading and mouth update — 2 October 2026
+
+- Rebuilt all three in Blender with phase-coupled pelvis rotation, chest counter-motion and stable travel gaze. Source forward axes now align with movement; the controller turns before travelling instead of strafing.
+- Actual face-mesh JawOpen and Smile morphs plus a skinned curved lining animate greetings, playful poses and yawns. Mouth transitions and loop endpoints are audited alongside skeletons.
+- Extended the CPU audit to check source-axis alignment, pelvis motion, forward-only stance travel, cadence matching and deformed chin vertices. A navigation regression check covers 180-degree turns.
+- Production UI checks pass for all three pets, including yawn playback, held reactions, locomotion, framing and exact GLB downloads. No runtime exceptions.
+- Mouth controls are performed expressions, not speech lip-sync. Physical phone tracking is still unverified; camera-engine testing uses synthetic input.

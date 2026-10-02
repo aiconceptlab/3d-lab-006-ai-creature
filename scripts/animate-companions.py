@@ -1,12 +1,16 @@
 """Author and bake living companion clips in Blender 4.5; no provider calls.
 
-Input is an original Tripo rigged GLB. Output keeps its geometry and PBR maps.
+Input is an original Tripo rigged GLB. Output preserves PBR maps and adds reviewed jaw morphs and mouth lining.
 Repairs Ember's incomplete rear leg, then solves four planted/swinging paws.
 Run: blender -b --python scripts/animate-companions.py -- input.glb output.glb report.json
 """
 import bpy, math, json, sys
 from pathlib import Path
 from mathutils import Vector, Matrix, Quaternion
+import importlib.util
+spec = importlib.util.spec_from_file_location("facial_rig", Path(__file__).with_name("facial-rig.py"))
+facial = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(facial)
 
 source, destination, report_path = map(Path, sys.argv[sys.argv.index("--") + 1:])
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -147,6 +151,9 @@ def leg_pose(leg, target):
     bpy.context.view_layer.update()
     return ankle
 
+facial_report = facial.author_mouth(arm, meshes)
+face_actions = {m.name: [] for m in meshes}
+
 fps = 30
 scene.render.fps = fps
 clips = [("Idle", 4, 0), ("Walk", 1.6, .26), ("Trot", .85, .65), ("Look", 4, 0), ("Rest", 5, 0),
@@ -162,6 +169,12 @@ for clip_name, duration, speed in clips:
     arm.animation_data.action = action
     action.use_fake_user = True
     actions.append(action)
+    for mesh in meshes:
+        keys = mesh.data.shape_keys
+        keys.animation_data_create()
+        face_action = bpy.data.actions.new(clip_name + "_" + mesh.name + "_Face")
+        keys.animation_data.action = face_action
+        face_actions[mesh.name].append((clip_name, face_action))
     positions = {key: [] for key in legs}
     stance_errors = []
     for frame in range(frames + 1):
@@ -176,10 +189,19 @@ for clip_name, duration, speed in clips:
         envelope = math.sin(math.pi * cycle) ** 2
         lower = {"Playful": .024, "Shy": .045, "Sleepy": .030, "Stretch": .018}.get(clip_name, 0) * envelope
         root_matrix = rest_matrices[root_name].copy()
-        root_matrix.translation += up * (.0018 * breathing - (.022 if speed else .003) - lower)
+        root_matrix.translation += up * (.0018 * breathing - (.032 if speed else .003) - lower)
+        pelvis_roll = (.055 if clip_name == "Walk" else .035) * math.sin(angle) if speed else 0
+        pelvis_pitch = .035 * math.cos(angle * 2) if speed else 0
+        pelvis_yaw = .025 * math.sin(angle) if speed else 0
+        if speed:
+            rotation = Quaternion(up, pelvis_yaw) @ Quaternion(side, pelvis_pitch) @ Quaternion(forward, pelvis_roll)
+            root_matrix = Matrix.Translation(root_matrix.translation) @ (rotation @ rest_matrices[root_name].to_quaternion()).to_matrix().to_4x4()
+            root_matrix.translation += side * .004 * math.sin(angle) + up * .006 * (1 - math.cos(angle * 2))
         arm.pose.bones[root_name].matrix = root_matrix
         for i, name in enumerate(spines):
-            rotate(name, (1, 0, 0), .008 * math.sin(angle + i * .5))
+            anatomical_rotate(name, pitch=(.012 * math.sin(angle * 2 - i * .45) if speed else .008 * math.sin(angle + i * .5)),
+                roll=-pelvis_roll * (.50 if i == 0 else .18), yaw=-pelvis_yaw * .28)
+        anatomical_rotate("tripo::Head_0", pitch=.014 * math.sin(angle * 2 + .4) if speed else 0, roll=-pelvis_roll * .15)
         yaw = (.32 if clip_name == "Look" else .025) * math.sin(angle)
         pitch = .07 * envelope if clip_name == "Rest" else 0
         roll = 0
@@ -203,8 +225,14 @@ for clip_name, duration, speed in clips:
             roll = .18 * envelope
         elif clip_name == "Stretch":
             pitch = .16 * envelope
-        anatomical_rotate("tripo::Head_1", yaw=yaw * .45, pitch=pitch * .45)
-        anatomical_rotate("tripo::Head_2", yaw=yaw * .55, pitch=pitch * .55, roll=roll)
+        if speed:
+            # Generated heads look sideways in their neutral poses. Face the
+            # anatomical body axis when travelling, with a stable gaze.
+            yaw += math.atan2(forward.y, forward.x)
+            pitch -= pelvis_pitch * .65
+            roll -= pelvis_roll * .50
+        anatomical_rotate("tripo::Head_1", yaw=yaw * .45, pitch=pitch * .45, roll=roll*.35)
+        anatomical_rotate("tripo::Head_2", yaw=yaw * .55, pitch=pitch * .55, roll=roll*.65)
         if clip_name in {"Playful", "Stretch"}:
             for name in spines[1:]:
                 anatomical_rotate(name, pitch=(.16 if clip_name == "Playful" else .10) * envelope / max(1, len(spines)-1))
@@ -212,9 +240,6 @@ for clip_name, duration, speed in clips:
             anatomical_rotate(name, pitch=(.13 * envelope if clip_name in {"Shy", "Sleepy"} else .035 * math.sin(angle * 2 + i * 1.5)))
         for i, name in enumerate(tails):
             rotate(name, (1, 0, 0), (.07 if clip_name == "Trot" else .015 if clip_name == "Rest" else .035) * math.sin(angle + i * .6))
-        if speed:
-            root_matrix.translation += up * .003 * (1 - math.cos(angle * 2))
-            arm.pose.bones[root_name].matrix = root_matrix
         bpy.context.view_layer.update()
         for key, leg in legs.items():
             target = leg["ankle"].copy()
@@ -226,7 +251,7 @@ for clip_name, duration, speed in clips:
                 # Four-beat walk; diagonal paired trot. Constant-velocity stance,
                 # smooth swing and lift. Stride matches the app's world speed.
                 phases = {"1_Left": 0, "0_Left": .25, "1_Right": .5, "0_Right": .75} if clip_name == "Walk" else {"0_Left": 0, "1_Right": 0, "0_Right": .5, "1_Left": .5}
-                duty = .66 if clip_name == "Walk" else .52
+                duty = .62 if clip_name == "Walk" else .48
                 phase = (cycle + phases[key]) % 1
                 stride = common_stride
                 if phase < duty:
@@ -241,11 +266,19 @@ for clip_name, duration, speed in clips:
             positions[key].append(list(actual))
             if not speed:
                 stance_errors.append((actual - target).length)
+        jaw, smile = facial.mouth_values(clip_name, cycle)
+        for mesh in meshes:
+            keys = mesh.data.shape_keys
+            for name, value in [("JawOpen", jaw), ("Smile", smile)]:
+                keys.key_blocks[name].value = value
+                keys.key_blocks[name].keyframe_insert("value", frame=frame+1)
         for p in arm.pose.bones:
             p.keyframe_insert("location", frame=frame + 1, group=p.name)
             p.keyframe_insert("rotation_quaternion", frame=frame + 1, group=p.name)
     reports.append({"clip": clip_name, "duration": frames / fps, "pawExcursions": {k: max((Vector(v) - Vector(rows[0])).length for v in rows) for k, rows in positions.items()}, "idleContactError": max(stance_errors, default=0)})
     arm.animation_data.action = None
+    for mesh in meshes:
+        mesh.data.shape_keys.animation_data.action = None
 
 # Separate NLA tracks give portable named clips with no runtime IK dependency.
 for action in actions:
@@ -253,6 +286,15 @@ for action in actions:
     track.name = action.name
     strip = track.strips.new(action.name, 1, action)
     track.mute = True
+for mesh in meshes:
+    keys = mesh.data.shape_keys
+    for clip_name, action in face_actions[mesh.name]:
+        track = keys.animation_data.nla_tracks.new()
+        track.name = clip_name
+        track.strips.new(clip_name, 1, action)
+        track.mute = True
+    for key in keys.key_blocks:
+        key.value = 0
 for p in arm.pose.bones:
     p.matrix_basis.identity()
 scene.frame_set(1)
@@ -268,7 +310,7 @@ scene.frame_end = 151
 bpy.ops.export_scene.gltf(filepath=str(destination.resolve()), export_format="GLB", use_selection=True,
     export_animation_mode="NLA_TRACKS", export_force_sampling=True, export_frame_range=False,
     export_anim_slide_to_zero=True, export_skins=True, export_yup=True, export_extras=True)
-report = {"source": source.name, "blender": bpy.app.version_string, "repairedRearLeg": repaired, "joints": len(bones), "strideRigUnits": common_stride, "clips": reports}
+report = {"source": source.name, "blender": bpy.app.version_string, "repairedRearLeg": repaired, "joints": len(bones), "facialRig": facial_report, "forwardRig": list(forward), "strideRigUnits": common_stride, "clips": reports}
 report_path.parent.mkdir(parents=True, exist_ok=True)
 report_path.write_text(json.dumps(report, indent=2))
 bpy.ops.wm.save_as_mainfile(filepath=str(report_path.with_suffix(".blend").resolve()))

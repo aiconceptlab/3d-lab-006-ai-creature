@@ -4,13 +4,13 @@ Nova, Mochi and Ember are separate reviewed Tripo-generated characters. They are
 
 | Pet | File | Triangles | Rig joints | Animation | API credits |
 | --- | --- | ---: | ---: | --- | ---: |
-| Nova | public/models/nova-living.glb | 38,040 | 35 | Idle, Walk, Trot, Look, Rest | 75 |
-| Mochi | public/models/mochi-living.glb | 39,875 | 33 | Idle, Walk, Trot, Look, Rest | 75 |
-| Ember | public/models/ember-living.glb | 38,521 | 31 | Idle, Walk, Trot, Look, Rest | 75 |
+| Nova | public/models/nova-living.glb | 38,552 | 35 | 11 body + facial clips | 75 |
+| Mochi | public/models/mochi-living.glb | 40,387 | 33 | 11 body + facial clips | 75 |
+| Ember | public/models/ember-living.glb | 39,033 | 31 | 11 body + facial clips | 75 |
 
 All three use H Series v3.1-20260211 meshes with detailed PBR textures and lighting removal and v2.5-20260210 source rigs. Original generation used an in-place quadruped walk preset. Each mesh cost 40 credits, rig check 0, rig 25 and walk 10. Mochi and Ember consumed 150 credits together in one pass on 1 October 2026; no paid retries. The recorded balance after those two pipelines was 775 credits. Vendor charges are authoritative.
 
-The current GLBs replace the original single walk with eleven locally baked Blender clips. Ember's rear-left chain was incomplete; three bones were added and 3,425 affected vertices were reweighted. Animation authoring consumed zero additional Tripo credits. The [animation guide](ANIMATION.md) documents gait phases, foot placement, blending, tests and limitations. Saved references to the older included filenames migrate to the new assets on load.
+The current GLBs replace the original single walk with eleven locally baked Blender clips. Ember's rear-left chain was incomplete; three bones were added and 3,425 affected vertices were reweighted. Animation and facial authoring consumed zero additional Tripo credits. The latest meshes include reviewed chin shape keys and a skinned mouth lining. The [animation guide](ANIMATION.md) documents gait phases, foot placement, blending, tests and limitations. Saved references to the older included filenames migrate to the new assets on load.
 
 Reference images were generated with Codex's built-in image tool, one image per character, without Tripo image credits. The files are public/mochi-reference.png and public/ember-reference.png. Nova provenance is in NOVA-ASSET.md. Source GLBs contain 4096-square PBR maps. The loader caps runtime texture dimensions at 2048 to reduce memory use when switching pets; downloadable GLBs retain the original maps. Fur is sculpted geometry and textures, not simulated hair strands.
 

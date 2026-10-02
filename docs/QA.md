@@ -51,8 +51,18 @@ The open in-app browser was still executing a PLAY 001 bundle. Reloading loaded 
 ## Living animation release
 
 - Blender 4.5.9: repaired Ember's incomplete rear-left chain and reweighted 3,425 affected vertices. All three models have Idle, Walk, Trot, Look and Rest; geometry counts remain 38,040 / 39,875 / 38,521 triangles. No further Tripo credits consumed.
-- Actual GLB CPU audit passes for every pet: complete chains, substantially weighted and deformed vertices on all four paws, two locomotion gaits, stationary paw drift below 1 mm, matching loop endpoints, head turns and bounded 60 Hz frame changes through blended transitions and repeated cycles. This audit is part of npm run check and CI.
-- Production browser checks pass for all three: all four limb chains change during chase, Trot is selected, five clips are available, movement stays framed, GLB downloads match source bytes, and an older saved Mochi URL migrates to the new model. Zero runtime exceptions.
+- Actual GLB CPU audit passes for every pet: complete chains, substantially weighted and deformed vertices on all four paws, two locomotion gaits, stationary paw drift below 2 mm, excluding intentionally moving greeting/stretch paws, matching loop endpoints, head turns and bounded 60 Hz frame changes through blended transitions and repeated cycles. This audit is part of npm run check and CI.
+- Production browser checks pass for all three: all four limb chains change during chase, Trot is selected, eleven clips are available, movement stays framed, GLB downloads match source bytes, and an older saved Mochi URL migrates to the new model. Zero runtime exceptions.
 - Desktop, iPhone and Pixel layout checks pass; the real room binary with synthetic camera input loads each new model, exits correctly and stops the camera. This remains a synthetic test, not physical phone tracking.
 - Actual textured side-view animation frames and a recording were rendered in the browser for inspection. The recording uses the same runtime blending/cadence as the app. Rest is a standing breather; generated facial blinking, sitting and lying down are not implemented.
-- Development dependency requests work again without serving hidden environment/private files. The security regression check runs in the 31-test suite.
+- Development dependency requests work again without serving hidden environment/private files. The security regression check runs in the unit and security suite.
+
+## Expressive companion release — 2 October 2026
+
+- Blender-authored Curious, Playful, Shy, Sleepy, Greet and Stretch added to all three included GLBs (11 clips each). Original meshes and texture maps retained; zero generation credits used.
+- CPU audit checks actual weighted face vertex displacement and head rotation, lifted greeting paw, extended front paws, stationary other paws, loop seams and bounded transitions for every pet.
+- Production UI checks exercise all four moods, hello, affection and stretch on all three models. Head rotation changes while each requested reaction remains held. Existing movement, framing, downloads and saved-model migration checks pass without browser exceptions.
+- The distributed room engine loads all three expressive pets with synthetic camera input. Hello selects Greet in the room mixer and the room head changes pose. Exit stops every camera track. Physical mobile tracking remains unverified.
+- Desktop, iPhone and Pixel responsive checks pass. Close three-quarter pose frames and a recording of all six expressive animations were visually reviewed.
+- 34 unit/contract/security checks pass, including reaction priority, stale-decision invalidation, autonomous variation, tracking pause and exploration breaks.
+- Expressions are authored body language. Eyelids and mouth shapes remain static; no facial emotions or eye closure are claimed.

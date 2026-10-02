@@ -7,3 +7,5 @@
 #room-canvas{position:absolute;inset:0;width:100%!important;height:100%!important}
 
 .model-loading{position:absolute;inset:0;z-index:2;display:grid;place-items:center;background:#111e22;color:#b8e3d3;font-size:13px;letter-spacing:.3px}
+
+.expression-tools{padding:6px 24px 18px;border-bottom:1px solid var(--line);margin-bottom:18px}.expression-tools>span{display:block;font-size:10px;letter-spacing:1px;color:#a1beb8;margin-bottom:10px}.mood-options,.reaction-options{display:flex;gap:8px;flex-wrap:wrap}.expression-tools button{border:1px solid #3b5450;background:#142427;color:#c4d8d1;border-radius:20px;padding:8px 13px;font-size:11px}.mood-options button[aria-pressed="true"]{color:#132a25;background:#b8e3d3;border-color:#b8e3d3}.reaction-options{margin-top:12px}.reaction-options button{background:transparent;border-color:transparent;color:#dfbe90;padding-left:0;padding-right:16px}.expression-tools p{font-size:10px;color:#8da7a2;line-height:1.5;margin:8px 0 0}@media(max-width:720px){.expression-tools{padding:4px 18px 14px}.mood-options{gap:6px}.expression-tools button{padding:8px 11px}.room-controls{max-height:180px;overflow:auto}}

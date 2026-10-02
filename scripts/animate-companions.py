@@ -101,13 +101,20 @@ for family in [0, 1]:
         leg["pole"] = pole.normalized() if pole.length > .01 * sum(leg["lengths"]) else forward * (-1 if family == 0 else 1)
 rest_matrices = {b.name: b.matrix_local.copy() for b in bones}
 rest_directions = {b.name: (b.tail_local - b.head_local).normalized() for b in bones}
-ear_names = [b.name for b in bones if "Head_" in b.name and b.name != "tripo::Head_0"]
+# Head_0 is the chest/neck, Head_1 the neck, Head_2 the face.
+# Only the high branches of Head_2 are ears (Ember has no separate ear rig).
+ear_names = [b.name for b in bones["tripo::Head_2"].children]
 tails = [b.name for b in bones if "Tail_" in b.name]
 for p in arm.pose.bones:
     p.rotation_mode = "QUATERNION"
 
 def rotate(name, axis, angle):
     arm.pose.bones[name].rotation_quaternion = Quaternion(Vector(axis), angle)
+
+def anatomical_rotate(name, yaw=0, pitch=0, roll=0):
+    basis = rest_matrices[name].to_quaternion().inverted()
+    arm.pose.bones[name].rotation_quaternion = (Quaternion(basis @ up, yaw)
+        @ Quaternion(basis @ side, pitch) @ Quaternion(basis @ forward, roll))
 
 def aim_bone(name, head, tail):
     q = rest_directions[name].rotation_difference((tail - head).normalized())
@@ -142,7 +149,9 @@ def leg_pose(leg, target):
 
 fps = 30
 scene.render.fps = fps
-clips = [("Idle", 4, 0), ("Walk", 1.6, .26), ("Trot", .85, .65), ("Look", 4, 0), ("Rest", 5, 0)]
+clips = [("Idle", 4, 0), ("Walk", 1.6, .26), ("Trot", .85, .65), ("Look", 4, 0), ("Rest", 5, 0),
+         ("Curious", 5, 0), ("Playful", 4, 0), ("Shy", 5, 0), ("Sleepy", 6, 0),
+         ("Greet", 4, 0), ("Stretch", 5, 0)]
 common_stride = min(sum(leg["lengths"]) for leg in legs.values()) * .40
 reports = []
 actions = []
@@ -163,19 +172,44 @@ for clip_name, duration, speed in clips:
         for p in arm.pose.bones:
             p.matrix_basis.identity()
         breathing = math.sin(2 * math.pi * cycle)
+        # Smooth entry, a held expressive middle, and a seamless neutral return.
+        envelope = math.sin(math.pi * cycle) ** 2
+        lower = {"Playful": .024, "Shy": .045, "Sleepy": .030, "Stretch": .018}.get(clip_name, 0) * envelope
         root_matrix = rest_matrices[root_name].copy()
-        root_matrix.translation += up * (.0018 * breathing - (.022 if speed else .003))
+        root_matrix.translation += up * (.0018 * breathing - (.022 if speed else .003) - lower)
         arm.pose.bones[root_name].matrix = root_matrix
         for i, name in enumerate(spines):
             rotate(name, (1, 0, 0), .008 * math.sin(angle + i * .5))
-        head_turn = (.12 if clip_name == "Look" else .015 if clip_name == "Rest" else .035) * math.sin(angle)
-        head_axis = rest_matrices["tripo::Head_0"].to_quaternion().inverted() @ up
-        rotate("tripo::Head_0", head_axis, head_turn)
-        if clip_name == "Rest":
-            pitch_axis = rest_matrices["tripo::Head_0"].to_quaternion().inverted() @ side
-            arm.pose.bones["tripo::Head_0"].rotation_quaternion @= Quaternion(pitch_axis, -.065 + .012 * breathing)
+        yaw = (.32 if clip_name == "Look" else .025) * math.sin(angle)
+        pitch = .07 * envelope if clip_name == "Rest" else 0
+        roll = 0
+        if clip_name == "Curious":
+            yaw = .24 * math.sin(angle)
+            roll = .32 * envelope * math.sin(angle * .75 + .65)
+            pitch = -.10 * envelope
+        elif clip_name == "Playful":
+            pitch = .20 * envelope
+            roll = .12 * envelope * math.sin(angle * 2)
+        elif clip_name == "Shy":
+            yaw = -.28 * envelope
+            pitch = .24 * envelope
+            roll = -.14 * envelope
+        elif clip_name == "Sleepy":
+            pitch = envelope * (.28 + .09 * math.sin(angle * 2))
+            roll = .08 * envelope
+        elif clip_name == "Greet":
+            yaw = -.12 * envelope
+            pitch = -.16 * envelope
+            roll = .18 * envelope
+        elif clip_name == "Stretch":
+            pitch = .16 * envelope
+        anatomical_rotate("tripo::Head_1", yaw=yaw * .45, pitch=pitch * .45)
+        anatomical_rotate("tripo::Head_2", yaw=yaw * .55, pitch=pitch * .55, roll=roll)
+        if clip_name in {"Playful", "Stretch"}:
+            for name in spines[1:]:
+                anatomical_rotate(name, pitch=(.16 if clip_name == "Playful" else .10) * envelope / max(1, len(spines)-1))
         for i, name in enumerate(ear_names):
-            rotate(name, (1, 0, 0), .012 * math.sin(angle * 2 + i * 1.5))
+            anatomical_rotate(name, pitch=(.13 * envelope if clip_name in {"Shy", "Sleepy"} else .035 * math.sin(angle * 2 + i * 1.5)))
         for i, name in enumerate(tails):
             rotate(name, (1, 0, 0), (.07 if clip_name == "Trot" else .015 if clip_name == "Rest" else .035) * math.sin(angle + i * .6))
         if speed:
@@ -184,6 +218,10 @@ for clip_name, duration, speed in clips:
         bpy.context.view_layer.update()
         for key, leg in legs.items():
             target = leg["ankle"].copy()
+            if clip_name == "Greet" and key == "0_Left":
+                target += up * .085 * envelope + forward * .040 * envelope
+            if clip_name == "Stretch" and key.startswith("0_"):
+                target += forward * .055 * envelope
             if speed:
                 # Four-beat walk; diagonal paired trot. Constant-velocity stance,
                 # smooth swing and lift. Stride matches the app's world speed.

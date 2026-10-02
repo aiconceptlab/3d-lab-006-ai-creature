@@ -22,9 +22,10 @@ On Windows use `Copy-Item .env.example .env` instead of `cp`. Open http://127.0.
 ## What works
 
 - Fox, cat and bunny companions: coat, eyes, luminous accents, ears, tail, body build and personality.
-- Detailed Nova, Mochi and Ember: separate textured, rigged assets with five Blender-authored clips. Each model runs in the preview and room camera with independent animation state. See [asset details](docs/COMPANION-ASSETS.md) and [animation workflow](docs/ANIMATION.md).
+- Detailed Nova, Mochi and Ember: separate textured, rigged assets with eleven Blender-authored clips. Each model runs in the preview and room camera with independent animation state. See [asset details](docs/COMPANION-ASSETS.md) and [animation workflow](docs/ANIMATION.md).
 - Jev interprets a description into eight validated choices. Trusted geometry creates and animates the result. Without a key, deterministic local rules are explicitly labelled.
 - Included pets use a four-beat walk, diagonal trot, idle breathing, curious head turns and a calmer standing rest, with blended transitions and speed-matched cadence. All four paws deform and move. Simple procedural designs also blink; generated meshes currently have no facial blink rig. All pets support virtual fetch, phone following, simulated energy and manually marked obstacle zones.
+- Curious, playful, shy and sleepy body language; greeting paw, affection and stretch reactions. Complete reactions are held before the next AI decision, in the preview and room.
 - Saved designs on the current browser; animated GLB and design JSON downloads.
 - Mobile camera view using the distributed 8th Wall engine. Floor placement, tracking-loss pause, recenter and camera cleanup.
 - Optional local person detection, enabled by “Notice people.” Camera frames stay on the device; only a visibility boolean goes to Jev. This is not identity recognition or distance measurement.
@@ -67,7 +68,7 @@ npm run test:sdk
 npm run test:live
 ```
 
-Browser checks use installed Microsoft Edge, or `BROWSER_CHANNEL=chrome`. The live check requires a running local server and a valid key for the selected Jev provider. `npm run check` includes CPU checks of all four deformed paws in the actual bundled GLBs. `npm run review:animations` records a side-view review (requires Playwright FFmpeg: `npx playwright install ffmpeg`). See [docs/QA.md](docs/QA.md) for what was and was not verified.
+Browser checks use installed Microsoft Edge, or `BROWSER_CHANNEL=chrome`. The live check requires a running local server and a valid key for the selected Jev provider. `npm run check` includes CPU checks of all four deformed paws in the actual bundled GLBs. `npm run review:animations` records a close expression review (requires Playwright FFmpeg: `npx playwright install ffmpeg`). See [docs/QA.md](docs/QA.md) for what was and was not verified.
 
 ## Project map
 

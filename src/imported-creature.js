@@ -37,7 +37,7 @@ export function createImportedCreature(asset,{height=.55,yaw=-Math.PI/2}={}){
   const mixer=new THREE.AnimationMixer(character),walkClip=asset.animations.find(c=>/walk/i.test(c.name))||asset.animations[0];
   const clipFor=name=>asset.animations.find(c=>c.name.toLowerCase()===name.toLowerCase());
   const actions={Walk:mixer.clipAction(walkClip)};
-  for(const name of ['Idle','Trot','Look','Rest'])if(clipFor(name))actions[name]=mixer.clipAction(clipFor(name));
+  for(const name of ['Idle','Trot','Look','Rest','Curious','Playful','Shy','Sleepy','Greet','Stretch'])if(clipFor(name))actions[name]=mixer.clipAction(clipFor(name));
   const paw=[];character.traverse(o=>{if(o.isBone&&/0_Left_Limb_2/.test(o.name))paw.push(o);});
   // Calibrate cadence from the actual normalised paw motion during stance.
   // This also accounts for different creature sizes and GLB parent scales.
@@ -53,24 +53,26 @@ export function createImportedCreature(asset,{height=.55,yaw=-Math.PI/2}={}){
       a.stop();
     }
   }
-  let current=null,disposed=false;
+  let current=null,disposed=false,lastExpressionEpoch=null;
   const activate=name=>{
     if(current===name)return;
     const previous=actions[current],next=actions[name];
     if(!next)return;
     const phase=previous?previous.time/previous.getClip().duration%1:0;
-    next.reset().setEffectiveWeight(1).fadeIn(.22).play();
+    next.reset().setEffectiveTimeScale(1).setEffectiveWeight(1).fadeIn(.35).play();
     if(['Walk','Trot'].includes(name)&&['Walk','Trot'].includes(current))next.time=phase*next.getClip().duration;
-    previous?.fadeOut(.22);current=name;
+    previous?.fadeOut(.35);current=name;
   };
   activate(actions.Idle?'Idle':'Walk');
   if(!actions.Idle)actions.Walk.enabled=false;
   return {group,character,mixer,triangles,generated:true,
-    animate(dt,speed,behaviour='idle'){
+    animate(dt,speed,behaviour='idle',expression=null,expressionEpoch=null){
       if(disposed)return;
       const moving=speed>.01;
       if(actions.Idle){
-        const name=moving?(speed>.15&&actions.Trot?'Trot':'Walk'):behaviour==='rest'&&actions.Rest?'Rest':behaviour==='look'&&actions.Look?'Look':'Idle';
+        const name=moving?(speed>.15&&actions.Trot?'Trot':'Walk'):expression&&actions[expression]?expression:behaviour==='rest'&&actions.Rest?'Rest':behaviour==='look'&&actions.Look?'Look':'Idle';
+        if(expression&&current===name&&expressionEpoch!==null&&expressionEpoch!==lastExpressionEpoch)actions[name].time=0;
+        lastExpressionEpoch=expressionEpoch;
         activate(name);
         if(moving)actions[name].setEffectiveTimeScale(Math.max(.1,Math.min(12,speed/nominal[name])));
         else actions[name].setEffectiveTimeScale(1);

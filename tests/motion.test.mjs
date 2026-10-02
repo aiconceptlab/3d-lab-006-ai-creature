@@ -2,6 +2,27 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {PetMotion,findPath,segmentSafe,DEFAULT_AREA,distance,allowedActions,fallbackDecision} from '../shared/motion.mjs';
 
+test('a requested mood holds a stationary pose, cancels travel and invalidates stale decisions',()=>{
+  const pet=new PetMotion();pet.setBall({x:1,z:0});pet.update(.05);const before={...pet.position},epoch=pet.requestEpoch;
+  assert.equal(pet.setMood('shy'),true);assert.equal(pet.expression,'Shy');assert.equal(pet.ball,null);assert.equal(pet.follow,false);assert.ok(pet.requestEpoch>epoch);
+  for(let i=0;i<80;i++)pet.update(.05);
+  assert.deepEqual(pet.position,before);assert.equal(pet.speed,0);assert.equal(pet.expression,'Shy');assert.ok(pet.expressionRemaining>.9);
+  assert.equal(pet.react('unknown'),false);assert.equal(pet.setMood('unknown'),false);
+  pet.setBall({x:-1,z:0});assert.equal(pet.expression,null);assert.equal(pet.expressionRemaining,0);
+});
+
+test('idle companions vary their poses, and tracking loss freezes a held reaction',()=>{
+  const pet=new PetMotion();for(let i=0;i<50;i++)pet.update(.05);assert.equal(pet.expression,'Curious');
+  const held=pet.expressionRemaining;pet.tracking='lost';for(let i=0;i<60;i++)pet.update(.05);assert.equal(pet.expressionRemaining,held);assert.equal(pet.react('Greet'),false);
+  pet.tracking='normal';for(let i=0;i<160;i++)pet.update(.05);assert.equal(pet.expression,'Greet');
+});
+
+test('long exploration pauses to emote; a user ball command still takes priority',()=>{
+  const pet=new PetMotion({random:()=>.95});pet.lifeTime=12;pet.setAction('explore');pet.update(.05);
+  assert.equal(pet.expression,'Curious');assert.equal(pet.speed,0);assert.equal(pet.action,'look');
+  pet.setBall({x:-1,z:0});pet.update(.05);assert.equal(pet.action,'chase');assert.equal(pet.expression,null);assert.ok(pet.speed>0);
+});
+
 test('route skirts a blocking zone; every segment and arrival stay safe',()=>{
   const start={x:-.8,z:0},goal={x:.8,z:0},obstacles=[{x:0,z:0,w:.5,d:.8}];
   const route=findPath(start,goal,DEFAULT_AREA,obstacles);assert.ok(route.length>2);

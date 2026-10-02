@@ -1,6 +1,8 @@
 export const ACTIONS = ['idle', 'look', 'explore', 'follow', 'chase', 'rest'];
 export const LABELS = {idle: 'Taking it all in', look: 'Looking your way', explore: 'Exploring', follow: 'Following you', chase: 'Chasing the ball', rest: 'A little breather'};
 export const DEFAULT_AREA = {minX: -1.4, maxX: 1.4, minZ: -1.4, maxZ: 1.4};
+export const MOOD_CLIPS = Object.freeze({curious:'Curious',playful:'Playful',shy:'Shy',sleepy:'Sleepy'});
+export const REACTION_CLIPS = ['Curious','Playful','Shy','Sleepy','Greet','Stretch'];
 export const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 export const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 export function blocked(p, obstacles, margin = .13) {
@@ -56,11 +58,22 @@ export function fallbackDecision(state) {
 export class PetMotion {
   constructor({random=Math.random, area=DEFAULT_AREA}={}) {
     this.random=random; this.area={...area};this.obstacles=[];this.position={x:0,z:0};this.viewer={x:0,z:1.4};this.yaw=0;this.path=[];this.action='idle';this.energy=82;this.age=0;this.speed=0;this.ball=null;this.follow=false;this.tracking='normal';this.requestEpoch=0;this.lastTarget=null;
+    this.mood='curious';this.expression=null;this.expressionRemaining=0;this.expressionClock=0;this.expressionIndex=0;this.lifeTime=0;this.nextFlourish=12;
+  }
+  react(clip,seconds=5) {
+    if(!REACTION_CLIPS.includes(clip)||this.tracking==='lost')return false;
+    this.follow=false;this.ball=null;this.setAction('look');this.speed=0;
+    this.expression=clip;this.expressionRemaining=seconds;this.expressionClock=0;return true;
+  }
+  setMood(mood) {
+    if(!MOOD_CLIPS[mood])return false;
+    this.mood=mood;return this.react(MOOD_CLIPS[mood],mood==='sleepy'?6:mood==='playful'?4:5);
   }
   snapshot(personality='curious',personVisible=false) {return {energy:Math.round(this.energy),action:this.action,secondsInAction:Math.round(this.age),follow:this.follow,ball:!!this.ball,tracking:this.tracking,personality,personVisible,distanceToPhone:Number(distance(this.position,this.viewer).toFixed(2))};}
   setAction(action) {
     if(!allowedActions(this.snapshot()).includes(action)) return false;
     this.action=action; this.age=0;this.path=[];this.lastTarget=null;
+    this.expression=null;this.expressionRemaining=0;this.expressionClock=0;
     if(action==='explore') {
       for(let i=0;i<16;i++) {
         const target={x:this.area.minX+(this.area.maxX-this.area.minX)*this.random(),z:this.area.minZ+(this.area.maxZ-this.area.minZ)*this.random()};
@@ -74,6 +87,9 @@ export class PetMotion {
   update(dt) {
     dt=clamp(dt,0,.05);this.age+=dt;
     if(this.tracking==='lost'){this.speed=0;return;}
+    this.lifeTime+=dt;
+    this.expressionClock+=dt;
+    if(this.expressionRemaining>0){this.expressionRemaining=Math.max(0,this.expressionRemaining-dt);if(!this.expressionRemaining){this.expression=null;this.expressionClock=0;}}
     if(this.energy<=8&&!['rest','idle','look'].includes(this.action))this.setAction('rest');
     if(this.action==='chase'&&!this.ball){this.setAction('idle');}
     if(this.action==='follow'&&!this.follow){this.setAction('idle');}
@@ -94,6 +110,16 @@ export class PetMotion {
     this.energy=clamp(this.energy+dt*(this.action==='rest'?2.8:this.speed>0?-.65:-.1),0,100);
     if(this.ball&&distance(this.position,this.ball)<.09){this.ball=null;this.setAction('look');}
     if(this.action==='explore'&&!this.path.length&&this.age>1)this.setAction('look');
+    if(this.action==='explore'&&this.speed>0&&this.lifeTime>=this.nextFlourish){
+      this.react(MOOD_CLIPS[this.mood],this.mood==='sleepy'?6:this.mood==='playful'?4:5);
+      this.nextFlourish=this.lifeTime+14+this.random()*5;
+    }
+    // Local animation variety is independent of the AI's six navigation actions.
+    // Never interrupt travel or a user-requested reaction with an idle flourish.
+    if(this.speed===0&&!this.expression&&['idle','look','rest'].includes(this.action)&&this.expressionClock>2.2){
+      const cycle=this.action==='rest'?['Sleepy','Stretch']:this.mood==='sleepy'?['Sleepy','Stretch','Curious']:this.mood==='shy'?['Shy','Curious','Stretch']:this.mood==='playful'?['Playful','Greet','Curious','Stretch']:['Curious','Greet','Stretch'];
+      this.expression=cycle[this.expressionIndex++%cycle.length];this.expressionRemaining=this.expression==='Sleepy'?6:['Greet','Playful'].includes(this.expression)?4:5;this.expressionClock=0;this.requestEpoch++;
+    }
   }
   turn(target,dt) {const delta=Math.atan2(Math.sin(target-this.yaw),Math.cos(target-this.yaw));this.yaw+=clamp(delta,-dt*4,dt*4);}
 }

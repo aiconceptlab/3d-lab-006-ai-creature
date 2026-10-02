@@ -1,7 +1,7 @@
 """Author and bake living companion clips in Blender 4.5; no provider calls.
 
 Input is an original Tripo rigged GLB. Output preserves PBR maps and adds reviewed jaw morphs and mouth lining.
-Repairs Ember's incomplete rear leg, then solves four planted/swinging paws.
+Repairs an identifiable single rear-leg stub, then solves four planted/swinging paws.
 Run: blender -b --python scripts/animate-companions.py -- input.glb output.glb report.json
 """
 import bpy, math, json, sys
@@ -29,17 +29,54 @@ bpy.context.view_layer.objects.active = arm
 arm.select_set(True)
 repaired = []
 
-# Tripo's Ember rig has one rear leg represented by a single misplaced bone.
-prefix = "tripo::1_Left_Limb_"
-if prefix + "1" not in arm.data.bones:
+# Recover a single incomplete rear chain from its complete opposite limb.
+# Some vendor rigs call the affected weighted joint only bone_N. Resolve that
+# stub by its weighted paw geometry, never by a pet name or arbitrary index.
+for handedness, opposite in [("Left", "Right"), ("Right", "Left")]:
+    prefix = "tripo::1_" + handedness + "_Limb_"
+    if all(prefix + str(i) in arm.data.bones for i in range(4)):
+        continue
+    other = [arm.data.bones.get("tripo::1_" + opposite + "_Limb_" + str(i)) for i in range(4)]
+    if any(b is None for b in other):
+        raise RuntimeError("Both rear legs need manual rig review")
     centre = arm.data.bones["tripo::Spine_0"].head_local.y
-    right = [arm.data.bones["tripo::1_Right_Limb_" + str(i)] for i in range(4)]
-    coordinates = [(b.head_local.copy(), b.tail_local.copy(), b.roll if hasattr(b, "roll") else 0) for b in right]
-    bpy.ops.object.mode_set(mode="EDIT")
-    previous = arm.data.edit_bones["tripo::Root"]
-    for i, (head, tail, _) in enumerate(coordinates):
+    coordinates = [(b.head_local.copy(), b.tail_local.copy()) for b in other]
+    for head, tail in coordinates:
         head.y = 2 * centre - head.y
         tail.y = 2 * centre - tail.y
+    original_name = prefix + "0"
+    if original_name not in arm.data.bones:
+        expected = coordinates[2][0]
+        candidates = []
+        for mesh in meshes:
+            transform = arm.matrix_world.inverted() @ mesh.matrix_world
+            for group in mesh.vertex_groups:
+                bone = arm.data.bones.get(group.name)
+                if not bone or not group.name.startswith("bone_") or bone.children:
+                    continue
+                vertices = [(transform @ v.co, next((g.weight for g in v.groups if g.group == group.index), 0)) for v in mesh.data.vertices]
+                vertices = [(p, w) for p, w in vertices if w > .1]
+                if len(vertices) < 50:
+                    continue
+                bottom = sorted(vertices, key=lambda v: v[0].z)[:max(20, len(vertices)//5)]
+                total = sum(w for _, w in bottom)
+                paw = sum((p*w for p, w in bottom), Vector()) / total
+                if (paw.y-centre)*(expected.y-centre) <= 0:
+                    continue
+                candidates.append(((paw-expected).length, group.name, paw))
+        candidates.sort(key=lambda item: item[0])
+        reach = sum((b.tail_local-b.head_local).length for b in other[:3])
+        if not candidates or candidates[0][0] > reach*.65 or (len(candidates)>1 and candidates[1][0]-candidates[0][0] < reach*.08):
+            raise RuntimeError("Missing rear limb has no unambiguous weighted paw stub")
+        original_name = candidates[0][1]
+        # Align the mirrored paw to this mesh's actual lateral position.
+        offset = candidates[0][2].y - coordinates[2][0].y
+        for head, tail in coordinates:
+            head.y += offset
+            tail.y += offset
+    bpy.ops.object.mode_set(mode="EDIT")
+    previous = arm.data.edit_bones["tripo::Root"]
+    for i, (head, tail) in enumerate(coordinates):
         name = prefix + str(i)
         bone = arm.data.edit_bones.get(name) or arm.data.edit_bones.new(name)
         bone.head, bone.tail, bone.parent = head, tail, previous
@@ -48,7 +85,7 @@ if prefix + "1" not in arm.data.bones:
     bpy.ops.object.mode_set(mode="OBJECT")
     segments = [(arm.data.bones[prefix + str(i)].head_local.copy(), arm.data.bones[prefix + str(i)].tail_local.copy()) for i in range(4)]
     for mesh in meshes:
-        original = mesh.vertex_groups.get(prefix + "0")
+        original = mesh.vertex_groups.get(original_name)
         if original is None:
             continue
         groups = [mesh.vertex_groups.get(prefix + str(i)) or mesh.vertex_groups.new(name=prefix + str(i)) for i in range(4)]
@@ -63,15 +100,16 @@ if prefix + "1" not in arm.data.bones:
                 line = b - a
                 t = max(0, min(1, (p - a).dot(line) / line.length_squared))
                 proximity.append(1 / ((p - (a + line * t)).length_squared + .00012) ** 2)
-            # Limit skin influences and blend across the new knee/hock joints.
             nearest = sorted(range(4), key=lambda i: proximity[i], reverse=True)[:2]
             total = sum(proximity[i] for i in nearest)
+            if original_name != prefix + "0":
+                original.remove([index])
             for i, group in enumerate(groups):
                 if i in nearest:
                     group.add([index], weight * proximity[i] / total, "REPLACE")
                 elif i == 0:
                     group.remove([index])
-        repaired.append({"mesh": mesh.name, "weightedVertices": sum(w > 0 for _, w in weights)})
+        repaired.append({"mesh": mesh.name, "limb": prefix, "sourceGroup": original_name, "reviewRequired": True, "weightedVertices": sum(w > 0 for _, w in weights)})
     bpy.context.view_layer.update()
 
 bones = arm.data.bones

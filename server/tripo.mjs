@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, writeFile, readdir, rename } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ProviderError } from './jev.mjs';
+import {OPEN_GENERATIONS} from '../shared/generation.mjs';
 const BASE='https://openapi.tripo3d.ai/v3';
 const stages={reference:'/generation/text-to-image',mesh:'/generation/image-to-model',check:'/animations/rig-check',rig:'/animations/rig',walk:'/animations/retarget'};
 export class TripoJobs {
@@ -18,7 +19,14 @@ export class TripoJobs {
   }
   async balance(){const data=await this.request('/account/balance');if(!Number.isFinite(data.balance)||data.balance<0)throw new ProviderError('Tripo did not return a valid API balance.',502);return {available:data.balance,frozen:data.frozen??0};}
   async requireCredits(minimum){const balance=await this.balance();if(balance.available<minimum)throw new ProviderError(`Tripo API balance is ${balance.available} credits. This stage needs approximately ${minimum} credits. Add developer API credits before continuing.`,402);}
+  current(owner){const jobs=[...this.jobs.values()].filter(j=>j.owner===owner).sort((a,b)=>b.createdAt-a.createdAt);const job=jobs.find(j=>OPEN_GENERATIONS.has(j.status))||jobs[0];return job?this.view(job):null;}
   async start(brief,owner) {
+    const existing=this.current(owner);if(existing&&OPEN_GENERATIONS.has(existing.status))return existing;
+    const lock='start:'+owner;if(this.pending.has(lock))throw new ProviderError('A generation is being submitted. Check its progress before starting another.',409);
+    this.pending.add(lock);
+    try{return await this.startNew(brief,owner);}finally{this.pending.delete(lock);}
+  }
+  async startNew(brief,owner) {
     await this.requireCredits(10);
     const job={id:randomUUID(),owner,name:brief.name,description:brief.description,stage:'reference',status:'submitting',createdAt:Date.now(),taskId:null,referenceTaskId:null,meshTaskId:null,rigTaskId:null};
     await this.save(job);
@@ -37,7 +45,7 @@ export class TripoJobs {
     if(typeof task.task_id!=='string')throw new ProviderError('Tripo did not return a task ID.');
     job.taskId=task.task_id;job.status='running';job.lastPoll=0;delete job.error;await this.save(job);
   }
-  async approve(id,owner) {const job=this.owned(id,owner);if(job.status!=='awaiting_approval')throw new ProviderError('This reference is not ready for approval.',409);await this.requireCredits(75);job.stage='mesh';try{await this.submit(job);}catch(e){job.status='uncertain';job.error=e.message;await this.save(job);throw e;}return this.view(job);}
+  async approve(id,owner) {const job=this.owned(id,owner),lock='approve:'+id;if(job.status!=='awaiting_approval'||this.pending.has(lock))throw new ProviderError('This reference is not ready for approval or is already being approved.',409);this.pending.add(lock);try{await this.requireCredits(75);job.stage='mesh';try{await this.submit(job);}catch(e){job.status='uncertain';job.error=e.message;await this.save(job);throw e;}return this.view(job);}finally{this.pending.delete(lock);}}
   owned(id,owner){const job=this.jobs.get(id);if(!job||job.owner!==owner)throw new ProviderError('This generation was not found.',404);return job;}
   async poll(id,owner) {
     const job=this.owned(id,owner);
@@ -46,7 +54,7 @@ export class TripoJobs {
     if(job.status!=='running'||Date.now()-(job.lastPoll||0)<2500||this.pending.has(id))return this.view(job);
     this.pending.add(id);job.lastPoll=Date.now();
     try {
-      const task=await this.request(`/tasks/${encodeURIComponent(job.taskId)}`);
+      const stage=job.stage,task=await this.request(`/tasks/${encodeURIComponent(job.taskId)}`);
       if(['failed','cancelled','canceled'].includes(task.status)){job.status='failed';job.error='The provider could not complete this stage. No automatic retry was submitted.';}
       else if(task.status==='success') {
         if(job.stage==='reference') {job.referenceTaskId=job.taskId;job.imageUrl=task.output?.generated_image_url;job.status='awaiting_approval';if(!validMedia(job.imageUrl))throw new ProviderError('Reference image was missing.');}
@@ -55,7 +63,7 @@ export class TripoJobs {
         else if(job.stage==='rig'){job.rigTaskId=job.taskId;job.stage='walk';await this.submit(job);}
         else {job.rawModelUrl=task.output?.model_url;if(!validMedia(job.rawModelUrl))throw new ProviderError('Animated model was missing.');job.stage='finish';job.status='finish_pending';}
       }
-      job.progress=task.progress??0;await this.save(job);
+      job.progress=job.stage===stage?(task.progress??0):0;await this.save(job);
     }catch(e){job.error=e.message;if(job.status==='submitting'){job.status='uncertain';}else if(e.status!==504){job.status='failed';}await this.save(job);}
     finally{this.pending.delete(id);}
     return this.view(job);

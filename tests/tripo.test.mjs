@@ -17,3 +17,13 @@ test('quality mesh preset retains PBR detail within the mobile face budget',()=>
 test('asset URLs cannot smuggle credentials or arbitrary third-party downloads',()=>{
   assert.equal(validMedia('https://cdn.tripo3d.ai/pet.glb'),true);assert.equal(validMedia('https://tripo3d.ai.evil.invalid/a'),false);assert.equal(validMedia('https://secret@cdn.tripo3d.ai/pet.glb'),false);assert.equal(validMedia('file:///private'),false);
 });
+test('concurrent starts and approvals cannot duplicate paid tasks; recovery is owner scoped',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'creature-resume-'));let posts=0,release;let gate=new Promise(r=>release=r);
+ const jobs=new TripoJobs({dir,key:'fixture',enabled:true,fetchFn:async(url,options)=>{if(url.endsWith('/account/balance')){await gate;return Response.json({code:0,data:{balance:100}});}if(options.method==='POST'){posts++;return Response.json({code:0,data:{task_id:'task-'+posts}});}return Response.json({code:0,data:{status:'success',progress:100,output:{generated_image_url:'https://cdn.tripo3d.ai/reference.png'}}});}});
+ try{
+  await jobs.load();const first=jobs.start({name:'Luma',description:'A cream kitten.'},'owner');await assert.rejects(jobs.start({name:'Other',description:'A red fox.'},'owner'),e=>e.status===409);release();const job=await first;
+  assert.equal((await jobs.start({name:'Other',description:'A red fox.'},'owner')).id,job.id);assert.equal(posts,1);assert.equal(jobs.current('another-owner'),null);
+  await jobs.poll(job.id,'owner');gate=new Promise(r=>release=r);const approval=jobs.approve(job.id,'owner');await assert.rejects(jobs.approve(job.id,'owner'),e=>e.status===409);release();await approval;assert.equal(posts,2);
+  const restarted=new TripoJobs({dir});await restarted.load();assert.equal(restarted.current('owner').name,'Luma');assert.equal(restarted.current('owner').status,'running');assert.equal(restarted.current('another-owner'),null);
+ }finally{await rm(dir,{recursive:true,force:true});}
+});

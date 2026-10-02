@@ -70,6 +70,7 @@ export async function createApp({env=process.env,jev,fetchFn=fetch,development=f
           if(!providerAccess){if(requireJev)throw new ProviderError('Set ACCESS_CODE on the server before sharing live AI access.',503);return send(res,200,{...fallbackDecision(state),note:'Local behaviour · no AI request made'});}
           try{return send(res,200,await jev.decide(state));}catch(e){if(requireJev)throw e;return send(res,200,{...fallbackDecision(state),note:'Local fallback · Jev unavailable'});}
         }
+        if(req.method==='GET'&&url.pathname==='/api/generations')return send(res,200,{generation:jobs.current(session.owner)});
         if(req.method==='POST'&&url.pathname==='/api/generations') {rate('generation:'+session.owner,3,3600000);if(!jobs.available)throw new ProviderError('Image-to-3D is not connected.',503);if(!blender&&!finishFn)throw new ProviderError('Install Blender and set BLENDER_PATH before detailed creation. No credits were spent.',503);return send(res,202,await jobs.start(validateBrief(await readJson(req)),session.owner));}
         const match=url.pathname.match(/^\/api\/generations\/([a-f0-9-]{36})(\/approve|\/finish)?$/);
         if(match){if(req.method==='GET'&&!match[2])return send(res,200,await jobs.poll(match[1],session.owner));if(req.method==='POST'&&match[2]==='/finish'){await readJson(req);return send(res,202,await jobs.retryFinish(match[1],session.owner));}if(req.method==='POST'&&match[2]==='/approve'){await readJson(req);return send(res,200,await jobs.approve(match[1],session.owner));}}

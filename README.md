@@ -59,6 +59,8 @@ The pet occupies a small virtual play area around the placement point. Mark excl
 
 The included Nova, Mochi and Ember need no Tripo account or credits to play. Connect a Tripo developer API key and install Blender 4.5 LTS or newer. Set `BLENDER_PATH` in `.env` and restart. Create my companion starts a premium character reference for a new description; approve it before mesh generation, quadruped rigging and the local animation finishing pass. Included sample descriptions reuse their models without paid generation. Finished compatible rigs can enter room mode; raw vendor walks are not offered as completed companions. Missing Blender blocks paid creation. Local finishing failures can be retried without provider credits. The original and finished GLBs are saved privately in DATA_DIR and finished assets require the owning session. Nova's complete live pipeline was checked on 1 October 2026 and consumed 75 API credits in one pass. Other generated creatures still require visual review; one good Nova is not a guarantee of quality for every prompt. See [docs/TRIPO.md](docs/TRIPO.md) and [Nova provenance](docs/NOVA-ASSET.md).
 
+The creator shows a persistent generation card with the pet name, current stage and provider progress when available. Refreshing restores the pending request and opens its artwork for approval. Create reopens an existing request instead of spending more credits. Interrupted progress checks reconnect automatically. The owning session can recover its latest request even if browser job storage was lost.
+
 ## Check it
 
 ```sh
@@ -66,6 +68,7 @@ npm run check
 npm run test:animations
 npm run test:browser
 npm run test:generated
+npm run test:generation
 npm run test:sdk
 npm run test:live
 ```

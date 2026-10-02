@@ -20,7 +20,8 @@
     "test:live": "node --env-file-if-exists=.env scripts/verify-live.mjs",
     "test:sdk": "node scripts/verify-sdk.mjs",
     "test:generated": "node scripts/verify-generated.mjs",
-    "test:custom": "node scripts/verify-custom-pipeline.mjs"
+    "test:custom": "node scripts/verify-custom-pipeline.mjs",
+    "test:generation": "node scripts/verify-generation.mjs"
   },
   "dependencies": {
     "@8thwall/engine-binary": "1.0.0",

@@ -92,3 +92,9 @@ The open in-app browser was still executing a PLAY 001 bundle. Reloading loaded 
 - 40 unit/security checks pass, including concurrent paid starts and concurrent approvals. The server returns the existing owner request, and locks submissions while checking credits. Percentages reset when the stage changes.
 - The actual saved custom Ember exposed a missing rear-right chain represented by a weighted unnamed stub. Blender now handles either rear side only when there is a complete opposite chain and an unambiguous weighted paw. It flags the repair for review and continues to reject ambiguous or doubly incomplete rear rigs. The full custom-pipeline browser test passed against this original model with mocked provider replies, then its real saved request finished locally with 13 clips. No new provider generation was submitted for the repair.
 - Precise facial fitting and anatomical review remain necessary for unusual generated models. Physical mobile room tracking is still unverified.
+
+## Windows LAN connection repair — 2 October 2026
+
+- Verified the actual app listens on 0.0.0.0:3019, responds with HTTP 200 at the active Ethernet LAN address, and renders its detailed preview in Edge using that LAN address. This local browser check alone does not prove access from a phone.
+- A phone on home Wi-Fi reported ERR_CONNECTION_TIMED_OUT. The Windows LAN helper was syntax checked, run with administrator rights and verified its resulting rule: Private profile, LocalSubnet source, TCP 3019 and the actual listening Node executable. The firewall stays enabled and edge traversal is blocked.
+- The helper is opt-in and administrator-only; normal app startup does not change firewall policy. A successful rule application is recorded privately under .data. Physical phone retesting is still required; a camera session also requires HTTPS.

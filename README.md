@@ -17,7 +17,7 @@ npm run build
 npm start
 ```
 
-On Windows use `Copy-Item .env.example .env` instead of `cp`. Open http://127.0.0.1:3019. It works without provider keys. The included pets are detailed generated assets; custom local designs are clearly labelled demos. By default the server binds to the LAN and prints your local and LAN addresses. Open the printed LAN URL on another device connected to the same network. Plain HTTP supports the preview and controls; camera room mode requires HTTPS. Development: `npm run dev`.
+On Windows use `Copy-Item .env.example .env` instead of `cp`. Open http://127.0.0.1:3019. It works without provider keys. The included pets are detailed generated assets; custom local designs are clearly labelled demos. By default the server binds to the LAN and prints your local and LAN addresses. Open the printed LAN URL on another device connected to the same network. Plain HTTP supports the preview and controls; camera room mode requires HTTPS. Development: `npm run dev`. For a phone connection timeout on Windows, the optional `npm run lan:windows` helper is run from an Administrator PowerShell while the app is running. It permits only the running Node executable, TCP 3019, private networks and the local subnet; see [BUILD.md](BUILD.md).
 
 ## What works
 

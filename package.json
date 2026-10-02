@@ -21,7 +21,8 @@
     "test:sdk": "node scripts/verify-sdk.mjs",
     "test:generated": "node scripts/verify-generated.mjs",
     "test:custom": "node scripts/verify-custom-pipeline.mjs",
-    "test:generation": "node scripts/verify-generation.mjs"
+    "test:generation": "node scripts/verify-generation.mjs",
+    "lan:windows": "powershell.exe -NoProfile -File scripts/enable-lan.ps1"
   },
   "dependencies": {
     "@8thwall/engine-binary": "1.0.0",

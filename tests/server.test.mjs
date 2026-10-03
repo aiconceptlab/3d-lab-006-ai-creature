@@ -16,6 +16,7 @@ test('sessions survive a restart but reject tampering, expiry and access-code ch
   const dir=await mkdtemp(join(tmpdir(),'creature-session-'));try{
     const a=await Sessions.open(dir,'door');const {token,session}=a.issue();const b=await Sessions.open(dir,'door');
     assert.equal(b.read(token).owner,session.owner);assert.equal(b.read(token+'x'),null);assert.equal(b.read(token,session.expires+1),null);
+    const renewal=b.issue(Date.now()+86400000,session.owner);assert.equal(b.read(renewal.token,Date.now()+86400000).owner,session.owner);assert.ok(renewal.session.expires>session.expires);
     assert.equal((await Sessions.open(dir,'new-door')).read(token),null);
   }finally{await rm(dir,{recursive:true,force:true});}
 });

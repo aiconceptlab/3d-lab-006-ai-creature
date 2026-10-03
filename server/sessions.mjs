@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { randomBytes, createHmac, timingSafeEqual } from 'node:crypto';
+export const SESSION_MS=30*86400000;
 
 // Signed, expiring session cookies keep generation ownership across restarts.
 // The signing secret is local server data, never a browser-accessible asset.
@@ -15,8 +16,9 @@ export class Sessions {
   }
   constructor(key){this.key=key;}
   sign(payload){return createHmac('sha256',this.key).update(payload).digest('base64url');}
-  issue(now=Date.now()) {
-    const session={owner:randomBytes(16).toString('hex'),expires:now+86400000};
+  issue(now=Date.now(),owner=randomBytes(16).toString('hex')) {
+    if(!/^[a-f0-9]{32}$/.test(owner))throw new Error('Invalid workshop owner.');
+    const session={owner,expires:now+SESSION_MS};
     const payload=Buffer.from(JSON.stringify(session)).toString('base64url');
     return {token:payload+'.'+this.sign(payload),session};
   }
@@ -26,7 +28,7 @@ export class Sessions {
     const a=Buffer.from(signature),b=Buffer.from(this.sign(payload));
     if(a.length!==b.length||!timingSafeEqual(a,b))return null;
     try {const value=JSON.parse(Buffer.from(payload,'base64url').toString());
-      return /^[a-f0-9]{32}$/.test(value.owner)&&Number.isFinite(value.expires)&&value.expires>now&&value.expires<=now+86400000?value:null;
+      return /^[a-f0-9]{32}$/.test(value.owner)&&Number.isFinite(value.expires)&&value.expires>now&&value.expires<=now+SESSION_MS?value:null;
     }catch{return null;}
   }
 }

@@ -49,9 +49,13 @@ Creation errors are shown explicitly. “Try the local demo” creates a clearly
 
 ## Try room mode on your phone
 
-Phones need an **HTTPS URL**, a compatible browser and camera permission. Localhost on your computer is not reachable from your phone. Use a trusted HTTPS reverse proxy/tunnel to this server, or deploy the Node app behind HTTPS. See [BUILD.md](BUILD.md).
+After building, run `npm run mobile`. It starts or reuses the workshop, downloads a checksum-verified official Cloudflare connector and creates a temporary HTTPS phone link. No Cloudflare account, domain, administrator permission or router changes are needed. Keep the terminal and computer running.
 
-Set a strong `ACCESS_CODE` before exposing live provider access. Safari on iPhone and Chrome on Android are the intended browsers; all-device support is not promised. In-app social browsers may fail. Desktop retains the creation and 3D preview.
+On your computer, meet the pet you want and click **Send this pet to my phone**. Scan its QR to open that exact model, including a custom generated pet and all its animations, in a separate phone session. Open directly in Safari or Chrome on iPhone, or Chrome on Android. Tap **Bring into my room**, allow camera/motion, scan a well-lit floor and tap to place. Camera starts only after your tap; physical tracking support still needs checking on your phone.
+
+The phone link exposes only the read-only play listener on loopback port 3020. It cannot log into the workshop, call Jev/Tripo, see other jobs or spend credits, even with an access code. Phone behaviour runs locally. A private link lasts one hour; a new link replaces the previous one. **Stop sharing** revokes future loads; an already downloaded model cannot be remotely erased. Existing workshop ownership is preserved. See [mobile setup and stable hosting](docs/MOBILE.md).
+
+Plain HTTP LAN addresses support preview but cannot enable the camera, including in iPhone Chrome. Quick Tunnels are temporary demo links; for a stable deployment route your HTTPS play hostname to MOBILE_PORT and keep the workshop private or protected by ACCESS_CODE. Desktop retains creation and 3D preview.
 
 The pet occupies a small virtual play area around the placement point. Mark exclusions yourself; the demo does not reconstruct furniture or understand the entire room. Follow means **follow the phone camera**. Fetch uses a **virtual ball**. Detection does not give the pet a physical body or real-world contact physics.
 
@@ -69,6 +73,7 @@ npm run test:animations
 npm run test:browser
 npm run test:generated
 npm run test:generation
+npm run test:mobile
 npm run test:sdk
 npm run test:live
 ```

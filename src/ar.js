@@ -8,7 +8,8 @@ export class RoomSession {
   constructor({canvas,design,motion,onStatus,onTap,onFrame,createPet}){Object.assign(this,{canvas,design,motion,onStatus,onTap,onFrame,createPet});this.placed=false;this.origin=new THREE.Vector3();this.ray=new THREE.Raycaster();this.plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);this.last=0;this.active=false;}
   async start(){
     if(!mobileARSupport())throw new Error('Open this website on an iPhone or Android phone to place your pet in the room.');
-    if(!cameraSupport())throw new Error('Camera access needs HTTPS and a supported browser. Open this link in Safari or Chrome.');
+    if(!isSecureContext)throw new Error('This HTTP link cannot use the camera. Send the pet from your computer and open its secure HTTPS phone link.');
+    if(!cameraSupport())throw new Error('This browser cannot start the camera. Open the secure phone link directly in Safari or Chrome.');
     this.active=true;
     // iOS requires these calls while the room button's user gesture is active.
     const permissions=[window.DeviceOrientationEvent,window.DeviceMotionEvent].filter(type=>typeof type?.requestPermission==='function').map(type=>type.requestPermission());

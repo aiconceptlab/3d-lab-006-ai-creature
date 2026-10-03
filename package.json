@@ -22,11 +22,14 @@
     "test:generated": "node scripts/verify-generated.mjs",
     "test:custom": "node scripts/verify-custom-pipeline.mjs",
     "test:generation": "node scripts/verify-generation.mjs",
-    "lan:windows": "powershell.exe -NoProfile -File scripts/enable-lan.ps1"
+    "lan:windows": "powershell.exe -NoProfile -File scripts/enable-lan.ps1",
+    "mobile": "node --env-file-if-exists=.env scripts/mobile.mjs",
+    "test:mobile": "node scripts/verify-mobile.mjs"
   },
   "dependencies": {
     "@8thwall/engine-binary": "1.0.0",
     "@mediapipe/tasks-vision": "1.0.1",
+    "qrcode": "1.5.4",
     "three": "0.186.1"
   },
   "devDependencies": {

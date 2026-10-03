@@ -20,11 +20,11 @@ On Windows, if the PC opens its LAN address but a phone on the same home network
 
 The included pets, local creation and play controls work on the LAN without keys or an access code. Unprotected LAN requests never invoke the configured providers. Set ACCESS_CODE and restart to share live provider actions.
 
-For camera room mode use an HTTPS tunnel/proxy on this computer. Forward the HTTPS origin to http://127.0.0.1:3019. Preserve the public Host header and set X-Forwarded-Proto=https. Do not disable browser certificate warnings. A self-signed URL can fail camera access.
+For camera room mode use `npm run mobile`, then click **Send this pet to my phone** on the PC and scan its QR. The launcher tunnels only the protected play listener at http://127.0.0.1:3020. It transfers your current completed custom pet or included sample, with no provider calls or credentials on the phone. Do not tunnel workshop port 3019 for this flow. See [the complete cross-platform setup](docs/MOBILE.md).
 
-Set ACCESS_CODE to a long unpredictable value and restart **before** sharing a live-AI URL. Provider actions on non-localhost origins require the access code; preview and local behaviour remain usable. Plain HTTP on a LAN does not provide phone camera access. Production should strip untrusted forwarded headers and provide HTTPS, compression and a durable DATA_DIR.
+ACCESS_CODE is unnecessary for the recommended read-only phone flow. If exposing a separate live-AI workshop URL, set a long unpredictable ACCESS_CODE first. Changing it invalidates existing workshop cookies. Production should strip untrusted forwarded headers and provide HTTPS, compression and a durable DATA_DIR. For a stable play URL, route your HTTPS proxy to MOBILE_PORT and set MOBILE_URL to that origin. Plain HTTP LAN addresses cannot use the phone camera.
 
-Open the link directly in Safari (iPhone) or Chrome (Android), unlock, then tap Bring into my room. Allow camera/device motion if the browser requests it. Point at a textured, well-lit floor, move slowly, then tap to place the pet. Use the controls to throw a virtual ball or follow the phone. Tap Obstacle then mark an exclusion. Rescan resets floor placement. Exit closes the camera stream.
+Open the QR link directly in Safari or Chrome on iPhone, or Chrome on Android, then tap Bring into my room. Allow camera/device motion, point at a textured well-lit floor, move slowly and tap to place. Throw a virtual ball, follow the phone or mark obstacle exclusions. Rescan resets placement; Exit closes the camera stream. HTTPS enables permission requests but does not guarantee tracking on every phone.
 
 The distributed engine downloads about 30 MB for room mode on first use. Optional local perception loads additional WASM/model assets only when enabled. A browser/phone that cannot load them can still use the 3D preview.
 

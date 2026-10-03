@@ -1,5 +1,7 @@
 # Third-party notices
 
+QR generation uses qrcode 1.5.4 (MIT), bundled locally: https://github.com/soldair/node-qrcode. The optional mobile launcher downloads cloudflared 2026.9.3 (Apache-2.0) from its official release and verifies its checksum. The executable is not distributed in the project ZIP.
+
 Application source: Copyright (c) 2026 AI Concept Lab, MIT.
 
 8th Wall engine binary: Copyright © 2026 Niantic Spatial, Inc. All rights reserved. Unmodified @8thwall/engine-binary 1.0.0. Licensed separately under the XR Engine License Agreement in public/licenses/8thwall.txt, including its warranty disclaimer. Official source: https://github.com/8thwall/engine. It is not MIT or an unrestricted engine licence. The app retains runtime attribution and an agreement link.

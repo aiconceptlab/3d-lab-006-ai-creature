@@ -1,5 +1,11 @@
 # Verification record — 1 October 2026
 
+## Secure mobile update — 3 October 2026
+
+42 automated tests pass, including scoped pet links, expiry, restart persistence, tamper rejection, cross-origin rejection, revoked phone cookies, owner isolation and zero provider calls through the mobile listener. The production build, desktop/iPhone/Android layout checks and pending-generation regression checks pass. A production browser test transfers a private animated GLB between separate PC and iPhone-sized sessions, loads all 13 clips, restores after refresh and blocks it after revocation. The official Cloudflare connector's Windows download and checksum verification, auto-start and live HTTPS listener were checked. macOS/Linux launcher paths have not been executed here. Workshop sessions now persist for 30 days and renew without changing job ownership.
+
+Physical iPhone/Android floor tracking and real camera permissions still need checking on the device; browser emulation does not prove SLAM quality. No model generation was purchased for this update.
+
 ## Passed
 
 - 31 automated tests (including generated-rig isolation, incomplete limb rejection, animation, grounded scaling, development-module serving with secret protection and credit guards): route clearance, inaccessible targets, fetch completion, tracking pause, follow stand-off, low-energy override, stale-response epoch triggers, Jev request/response contract, malformed outputs, sanitised provider failures, invalid-key network circuit, explicit demo mode, geometry changes, signed-session restart/tamper/expiry, room adapter lifecycle with a fixture, API authorisation/CSRF/body-size/static-secret protection, public-credit guard, paid-stage approval/no duplicate retry and asset URL checks.
